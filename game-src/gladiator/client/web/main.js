@@ -141,8 +141,8 @@ function updateFighters(mult) {
   if (st === curStage) return false;
   const up = st > curStage;
   curStage = st;
-  el.playerImg.src = `${A}player-${st}.png`; retrigger(el.playerImg, "swap");
-  el.enemyImg.src = `${A}enemy-${st}.png`; retrigger(el.enemyImg, "swap");
+  swapImg(el.playerImg, `${A}player-${st}.png`, () => retrigger(el.playerImg, "swap"));
+  swapImg(el.enemyImg, `${A}enemy-${st}.png`, () => retrigger(el.enemyImg, "swap"));
   return up;
 }
 
@@ -479,11 +479,19 @@ const setMultHeat = (m) => {
 };
 // the deeper the run, the hotter the ROUND banner (round 1 = plain)
 const setRoundFx = (n) => { el.round.className = "round-badge" + (n >= 9 ? " r4" : n >= 6 ? " r3" : n >= 4 ? " r2" : n >= 2 ? " r1" : ""); };
+// Point an <img> at new artwork and only reveal it once that artwork is decoded.
+// Revealing first leaves the element showing the previous frame's bitmap, which is
+// how a win used to flash the defeat banner (and the other way round).
+function swapImg(img, url, reveal) {
+  if (img.getAttribute("src") === url) { reveal(); return; }
+  img.src = url;
+  if (img.decode) img.decode().then(reveal, reveal); // warm cache: resolves right away
+  else reveal();
+}
 function showWinBanner(file) {
   const wb = $("winbanner");
-  $("winbanner-img").src = `${A}banner-${file}.png`;
   wb.classList.toggle("defeat", file === "defeat");
-  retrigger(wb, "go");
+  swapImg($("winbanner-img"), `${A}banner-${file}.png`, () => retrigger(wb, "go"));
 }
 // blood splatter on defeat - organic dark-red blobs hit the screen, then fade
 const rndBlob = () => `${38 + Math.random() * 30}% ${38 + Math.random() * 30}% ${38 + Math.random() * 30}% ${38 + Math.random() * 30}% / ${38 + Math.random() * 30}% ${38 + Math.random() * 30}% ${38 + Math.random() * 30}% ${38 + Math.random() * 30}%`;
