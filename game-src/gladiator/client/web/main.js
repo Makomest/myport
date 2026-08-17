@@ -317,23 +317,62 @@ function countUp(node, from, to, ms, fmt) {
 const Sfx = (() => {
   const DIR = A + "sfx/";
   let vol = (() => { const v = parseFloat(localStorage.getItem("gladiator-vol")); return isNaN(v) ? 0.8 : Math.max(0, Math.min(1, v)); })();
-  const base = {}; // name -> preloaded Audio (cloned per play so sounds can overlap)
-  const have = (name) => true; // optimistic; a missing file just fails to play silently
-  function el(name) { if (!base[name]) { const a = new Audio(DIR + name + ".mp3"); a.preload = "auto"; base[name] = a; } return base[name]; }
+  // One-shots go through WebAudio: each sample is decoded once and fired from a
+  // buffer source, which starts on the next audio quantum. Cloning an <audio> per
+  // hit re-spun the decode pipeline every time, so the same cue landed tens of ms
+  // early or late and drifted against the animation it was meant to punctuate.
+  const AC = window.AudioContext || window.webkitAudioContext;
+  const ONE_SHOTS = [
+    "bigwin", "bust", "cashout", "clash", "clash-2", "click", "coin-select",
+    "coins-to-balance", "consolation", "crowd-boo", "crowd-cheer", "crowd-gasp",
+    "epicwin", "loot-common", "loot-epic", "loot-jackpot", "loot-legendary",
+    "loot-mythic", "loot-rare", "megawin", "mult-heat", "reel-tick", "stack",
+    "tick", "tier-up", "toggle", "whoosh", "win",
+  ];
+  let ctx = null;
+  const buffers = new Map(); // name -> AudioBuffer
+  const loading = new Map(); // name -> in-flight promise, so a burst loads once
+  function ac() {
+    if (!ctx && AC) { try { ctx = new AC(); } catch { return null; } }
+    if (ctx && ctx.state === "suspended") ctx.resume().catch(() => {});
+    return ctx;
+  }
+  function load(name) {
+    if (buffers.has(name)) return Promise.resolve(buffers.get(name));
+    if (loading.has(name)) return loading.get(name);
+    const c = ac();
+    if (!c) return Promise.resolve(null);
+    const p = fetch(DIR + name + ".mp3")
+      .then((r) => (r.ok ? r.arrayBuffer() : Promise.reject()))
+      .then((b) => c.decodeAudioData(b))
+      .then((buf) => { buffers.set(name, buf); loading.delete(name); return buf; })
+      .catch(() => { loading.delete(name); return null; }); // missing file: stays silent
+    loading.set(name, p);
+    return p;
+  }
+  // decode everything up front so the first hit of a cue is as prompt as the rest
+  function preload() { for (const n of ONE_SHOTS) load(n); }
+  function fire(name, gain, rate) {
+    const c = ac(); if (!c) return;
+    const buf = buffers.get(name);
+    if (!buf) { load(name).then((b) => { if (b) fire(name, gain, rate); }); return; }
+    const src = c.createBufferSource();
+    src.buffer = buf;
+    if (rate) src.playbackRate.value = rate;
+    const g = c.createGain();
+    g.gain.value = Math.max(0, Math.min(1, gain));
+    src.connect(g).connect(c.destination);
+    src.start();
+  }
   function play(name, gain = 1) {
     if (vol <= 0) return;
-    try { const n = el(name).cloneNode(); n.volume = Math.max(0, Math.min(1, vol * gain)); n.play().catch(() => {}); } catch {}
+    fire(name, vol * gain);
   }
   // loot-reel tick sample — fired per tile; slight pitch/volume jitter so the rapid
   // run doesn't sound robotic
   function tick() {
     if (vol <= 0) return;
-    try {
-      const n = el("reel-tick").cloneNode();
-      n.volume = Math.max(0, Math.min(1, vol * (0.5 + Math.random() * 0.15)));
-      n.playbackRate = 0.94 + Math.random() * 0.2;
-      n.play().catch(() => {});
-    } catch {}
+    fire("reel-tick", vol * (0.5 + Math.random() * 0.15), 0.94 + Math.random() * 0.2);
   }
   // looping beds (single instances)
   let music = null, amb = null, bedsOn = false;
@@ -349,7 +388,7 @@ const Sfx = (() => {
   }
   const pick = (...names) => names[Math.floor(Math.random() * names.length)];
   return {
-    resume() { if (!bedsOn) { bedsOn = true; beds(); } },
+    resume() { ac(); preload(); if (!bedsOn) { bedsOn = true; beds(); } },
     get muted() { return vol <= 0; },
     get volume() { return vol; },
     setVolume(v) { vol = Math.max(0, Math.min(1, v)); localStorage.setItem("gladiator-vol", vol.toFixed(2)); applyVol(); },
