@@ -7,6 +7,9 @@ const $ = (id) => document.getElementById(id);
 let autoSpeed = 1; // autoplay acceleration (1× / 2× / 3×); 1 during manual play
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms / autoSpeed));
 const retrigger = (el, cls) => { el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); };
+// Run a cue on the frame that paints the visual it belongs to. Class changes only show
+// up at the next paint, so firing a sound inline makes it lead the picture by a frame.
+const onPaint = (fn) => requestAnimationFrame(fn);
 const rndInt = (n) => 1 + Math.floor(Math.random() * n);
 if (localStorage.getItem("gladiator-lowfx") === "1") document.body.classList.add("lowfx");
 const LOW = () => document.body.classList.contains("lowfx"); // quality mode: fewer particles
@@ -21,12 +24,41 @@ const el = {
 // restore idle sway after a one-shot swap-pop
 for (const img of [el.playerImg, el.enemyImg]) img.addEventListener("animationend", () => img.classList.remove("swap"));
 
+// Warm every sprite up front — fetch AND decode, holding a reference so the decoded
+// frame is not dropped. A cold `img.src = ...` mid-round paints a frame or more after
+// the cue that goes with it, which reads as the sound running ahead of the picture.
+const IMG_CACHE = new Map(); // url -> Image, kept alive on purpose
+function warm(url) {
+  let img = IMG_CACHE.get(url);
+  if (img) return img;
+  img = new Image();
+  img.src = url;
+  if (img.decode) img.decode().catch(() => {}); // pre-decode; missing files just no-op
+  IMG_CACHE.set(url, img);
+  return img;
+}
+const SPRITES = [
+  "arena-bg", "BGsecond", "banner-round", "banner-win", "banner-bigwin", "banner-megawin",
+  "banner-epicwin", "banner-defeat", "btn-start", "btn-continue", "btn-cashout", "btn-sound",
+  "btn-soundmute", "coin", "coin-10", "coin-20", "coin-50", "frame-player", "rose",
+  "icon-shield", "icon-swords", "icon-trophy",
+];
+for (let i = 1; i <= 6; i++) SPRITES.push(`player-${i}`, `enemy-${i}`);
+for (let i = 1; i <= 7; i++) SPRITES.push(`opponent-avatar${i}`);
+for (const key of ["common", "rare", "epic", "legendary", "mythic", "jackpot"]) {
+  for (let v = 1; v <= 3; v++) SPRITES.push(`${key}-${v}`);
+}
+for (const n of SPRITES) warm(`${A}${n}.png`);
+
 // which attack poses exist (player & enemy, tiers 1..6) - used during the clash lunge
 const hasAttack = new Set();
 const hasEnemyAtk = new Set();
 for (let i = 1; i <= 6; i++) {
-  const p = new Image(); p.onload = () => hasAttack.add(i); p.src = `./assets/playerAttack-${i}.png`;
-  const e = new Image(); e.onload = () => hasEnemyAtk.add(i); e.src = `./assets/enemyattack-${i}.png`;
+  const p = warm(`${A}playerAttack-${i}.png`);
+  const e = warm(`${A}enemyattack-${i}.png`);
+  const addP = () => hasAttack.add(i), addE = () => hasEnemyAtk.add(i);
+  p.complete ? addP() : p.addEventListener("load", addP, { once: true });
+  e.complete ? addE() : e.addEventListener("load", addE, { once: true });
 }
 
 // build 3 gem slots
@@ -238,8 +270,10 @@ async function spinLoot(winSpec) {
   reelCtl.landed = true;
   win.classList.add("landed");
   reel.classList.add("lit");
-  if (hasGem) { Sfx.loot(winTileSpec.r.key); if (winSpec.star) Sfx.consolation(); } else Sfx.consolation();
-  vibe(20);
+  onPaint(() => {
+    if (hasGem) { Sfx.loot(winTileSpec.r.key); if (winSpec.star) Sfx.consolation(); } else Sfx.consolation();
+    vibe(20);
+  });
   await sleep(360 / autoSpeed);
   reel.classList.remove("show", "lit");
   reelCtl = null;
@@ -533,7 +567,8 @@ async function animateFight(from, ev) {
   if (eatk) el.enemyImg.src = `${A}enemyattack-${curStage}.png`;
   el.fighters.classList.add("clash");
   sparkBurst();
-  Sfx.clash(); vibe(18);
+  // fire the hit on the frame that actually paints the lunge, not the one that queues it
+  requestAnimationFrame(() => { Sfx.clash(); vibe(18); });
   await sleep(480);
   el.fighters.classList.remove("clash");
   if (atk) el.playerImg.src = `${A}player-${curStage}.png`; // back to idle stance
@@ -568,15 +603,15 @@ async function animateFight(from, ev) {
       countUp(el.cashAmt, bet * from, bet * ev.multiplier, 480, (v) => fmtMoney(v)),
     ]);
     setMultHeat(ev.multiplier);
-    if (updateFighters(ev.multiplier)) { shake(); Sfx.tierUp(); }
-    if (ev.jackpot || (ev.itemMult && ev.itemMult >= 10)) { flashFx("gold"); cheer(); shake(); burstCoins(40); Sfx.gasp(); vibe([0, 30, 40, 50]); await sleep(300); }
+    if (updateFighters(ev.multiplier)) { shake(); onPaint(() => Sfx.tierUp()); }
+    if (ev.jackpot || (ev.itemMult && ev.itemMult >= 10)) { flashFx("gold"); cheer(); shake(); burstCoins(40); onPaint(() => { Sfx.gasp(); vibe([0, 30, 40, 50]); }); await sleep(300); }
     await sleep(120);
   } else {
     flashFx("red"); shake();
     el.player.classList.add("dead");
     showWinBanner("defeat");
     spawnBlood(9);
-    Sfx.bust(); vibe(160);
+    onPaint(() => { Sfx.bust(); vibe(160); });
     await sleep(1000);
   }
 }
@@ -599,7 +634,7 @@ async function animateCashout(s) {
   if (typeof s.balance === "number" && Math.abs(s.balance - lastBalance) > 0.001) {
     coinsToBalance(10);
     retrigger(el.bal, "credit");
-    Sfx.coins();
+    onPaint(() => Sfx.coins());
     const from = lastBalance;
     lastBalance = s.balance;
     await countUp(el.bal, from, s.balance, 950, (v) => fmtMoney(v));
@@ -734,7 +769,7 @@ function addXp(rounds, payoutMult) {
     setAvatarByLevel();
     retrigger(el.avatar, "levelup");
     const t = $("lvlup"); t.textContent = "LEVEL " + level; retrigger(t, "go");
-    Sfx.tierUp(); vibe([0, 40, 60, 80]);
+    onPaint(() => { Sfx.tierUp(); vibe([0, 40, 60, 80]); });
   }
 }
 setAvatarByLevel();
@@ -790,7 +825,7 @@ async function refreshRank() {
     dailyStars = newStars; dailyRank = newRank; runStars = 0;
     renderRank();
     setRankDisplay(newRank);
-    if (gained > 0) { retrigger(el.points, "credit"); Sfx.coinSelect(); }
+    if (gained > 0) { retrigger(el.points, "credit"); onPaint(() => Sfx.coinSelect()); }
   } catch { /* offline - keep provisional */ }
 }
 setTimeout(refreshRank, 900); // initial rank once connected
