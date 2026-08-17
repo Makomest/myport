@@ -701,7 +701,11 @@ function addXp(rounds, payoutMult) {
 setAvatarByLevel();
 renderXp();
 
-const socket = reconnectingSocket(`ws://localhost:${PORT}/?account=${encodeURIComponent(username)}`);
+const __isLocal = ["localhost", "127.0.0.1"].includes(location.hostname);
+const __wsBase = __isLocal
+  ? `ws://${location.hostname}:${PORT}`
+  : `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}`;
+const socket = reconnectingSocket(`${__wsBase}/?account=${encodeURIComponent(username)}`);
 let everConnected = false;
 socket.onOpen(() => { everConnected = true; $("reconnect").classList.remove("show"); });
 socket.onClose(() => { if (everConnected) $("reconnect").classList.add("show"); });
