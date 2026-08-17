@@ -1,0 +1,35 @@
+# OS / editor
+.DS_Store
+.qodo/
+.claude/
+
+# Unused heavy media at root (site uses assets/video/hero.mp4 and assets/logo.png)
+/hero.mp4
+/hero1.mp4
+/hero2.mp4
+/hover.psd
+/11111.png
+/Logo.png
+
+# Gladiator: game sources and build artifacts, not served by the landing page
+assets/glad/GladiatorGame/
+assets/glad/gladiator-image.tar
+assets/glad/GladiatorGame-deploy.tar.gz
+assets/glad/docker-compose.server.yml
+
+# Gladiator: unreferenced showcase video and PNG originals superseded by .webp
+assets/glad/gladiatorShowcase.mp4
+assets/glad/*.png
+
+# Redline Rush: screenshots and showcase video, not referenced anywhere
+assets/redlinerush-d9f1fc45a4efb18d96e9/scrnShots/
+
+# Redline Rush: unused background variants (only bg-landscape2.png is loaded)
+assets/redlinerush-d9f1fc45a4efb18d96e9/assets/bg-landscap.png
+assets/redlinerush-d9f1fc45a4efb18d96e9/assets/bg-landscape.png
+assets/redlinerush-d9f1fc45a4efb18d96e9/assets/bg-landscape1.png
+
+# SSH private keys — never commit
+*.pem
+*.key
+id_rsa*

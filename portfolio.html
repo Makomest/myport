@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Portfolio - RoniGaming</title>
+  <meta name="description" content="Every iGaming title by RoniGaming. Browse the games, view specs and play the demos." />
+  <meta property="og:title" content="RoniGaming - Portfolio" />
+  <meta property="og:description" content="Every game, with specs and playable demos." />
+  <meta property="og:type" content="website" />
+  <meta property="og:image" content="https://ronigames.org/assets/og.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:image" content="https://ronigames.org/assets/og.png" />
+  <link rel="icon" type="image/png" href="assets/logo-favicon.png" />
+  <link rel="preload" href="assets/fonts/satoshi-400.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="assets/fonts/general-sans-600.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body>
+
+  <!-- NAV -->
+  <header class="nav">
+    <div class="nav__inner">
+      <a href="/" class="brand" aria-label="ronIGAMING"><img class="brand__logo" src="assets/logo-mark.png" alt="ronIGAMING" /></a>
+      <nav class="nav__links" aria-label="Primary">
+        <a href="/portfolio">Games</a>
+        <a href="/#about">About</a>
+      </nav>
+      <div class="nav__cta">
+        <a href="/#contact" class="btn btn--ghost">Get in touch</a>
+      </div>
+      <button class="nav__burger" aria-label="Menu" aria-expanded="false" aria-controls="mobile-menu"><span></span></button>
+    </div>
+  </header>
+  <div class="nav__menu" id="mobile-menu">
+    <a href="/portfolio">Games</a>
+    <a href="/#about">About</a>
+    <a href="/#contact" class="btn btn--primary">Get in touch</a>
+  </div>
+
+  <main>
+    <section class="section wrap">
+      <div class="shead reveal" style="margin-top:2.5rem">
+        <span class="kicker">Portfolio</span>
+        <h1 class="display" style="margin-top:.9rem">Every game I have built</h1>
+        <p class="lead">Slot and crash-hybrid titles, each with its own math model, art direction and bonus design. Open one to see the specs and play the demo.</p>
+      </div>
+      <div class="portfolio-grid" id="portfolio-grid">
+        <noscript><p class="muted">Enable JavaScript to browse the games.</p></noscript>
+      </div>
+    </section>
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="wrap">
+      <div class="footer__top">
+        <a href="/" class="brand"><img class="brand__logo" src="assets/logo-mark.png" alt="" />ronIGAMING</a>
+        <nav class="footer__links" aria-label="Footer">
+          <a href="/portfolio">Games</a>
+          <a href="/#about">About</a>
+          <a href="/#contact">Contact</a>
+        </nav>
+      </div>
+      <div class="footer__note">
+        <span class="age"><b>18+</b> Games shown are demos for entertainment. Play responsibly.</span>
+        <span>&copy; <span data-year>2026</span> RoniGaming. ronigames.org</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="assets/js/games.js"></script>
+  <script src="assets/js/main.js"></script>
+</body>
+</html>

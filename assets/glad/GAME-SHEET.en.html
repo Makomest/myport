@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Gladiator - Game Sheet</title>
+<style>
+  :root{
+    --bg:#0e0f17; --panel:#16172a; --panel2:#1c1d33; --line:#2c2e4d;
+    --gold:#e9cd83; --gold2:#c8a13a; --txt:#eceae3; --dim:#9aa0b5; --green:#7fe07f;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; background:var(--bg); color:var(--txt);
+    font-family:Georgia,"Times New Roman",serif; font-size:11.2px; line-height:1.5; }
+  .page{ max-width:820px; margin:0 auto; padding:18px 26px 28px; }
+  h1,h2,h3,.brand,.badge,.spec th,.adv b,.tag{ font-family:"Trebuchet MS",Arial,sans-serif; }
+  .head{ display:flex; align-items:flex-end; justify-content:space-between; gap:16px;
+    border-bottom:2px solid var(--gold2); padding-bottom:12px; margin-bottom:14px; }
+  .brand{ font-size:34px; font-weight:800; letter-spacing:3px; color:var(--gold);
+    text-shadow:0 1px 0 #000; margin:0; }
+  .sub{ color:var(--dim); font-size:12px; letter-spacing:1px; margin-top:3px; }
+  .badges{ display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; max-width:330px; }
+  .badge{ font-size:9.5px; font-weight:700; color:#2a2106; background:linear-gradient(180deg,#ffe9a8,#c8a13a);
+    border-radius:5px; padding:4px 8px; white-space:nowrap; }
+  h2{ font-size:14px; color:var(--gold); letter-spacing:.6px; margin:16px 0 8px;
+    border-left:3px solid var(--gold2); padding-left:9px; }
+  p{ margin:6px 0; }
+  b{ color:#f4ecd6; }
+  .lead{ font-size:12px; }
+  .lead b{ color:var(--gold); }
+  section{ break-inside:avoid; }
+  table.spec{ width:100%; border-collapse:collapse; margin:4px 0; }
+  .spec th,.spec td{ text-align:left; padding:6px 10px; border-bottom:1px solid var(--line); font-size:11px; }
+  .spec th{ color:var(--gold); width:34%; font-weight:700; }
+  .adv{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .card{ background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:9px 11px; }
+  .card b{ color:var(--gold); display:block; margin-bottom:2px; font-size:11.5px; }
+  ul{ margin:6px 0; padding-left:18px; }
+  li{ margin:3px 0; }
+  .sub-ul{ list-style:none; padding-left:14px; }
+  .sub-ul li::before{ content:"\2013\00a0"; color:var(--gold2); }
+  .shot{ border:1.5px dashed var(--gold2); border-radius:9px; background:
+    repeating-linear-gradient(45deg,rgba(255,255,255,.015) 0 10px,transparent 10px 20px), var(--panel);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; color:var(--dim);
+    text-align:center; gap:4px; }
+  .shot .ico{ font-size:22px; color:var(--gold2); }
+  .shot .lbl{ font-family:"Trebuchet MS",Arial,sans-serif; font-size:11px; color:var(--gold); font-weight:700; }
+  .shot .dim{ font-size:9px; color:var(--dim); }
+  .hero{ height:230px; margin:12px 0 4px; }
+  img.shot-img{ width:100%; display:block; border:1px solid var(--line); border-radius:9px; object-fit:cover; }
+  img.shot-img.hero{ height:230px; }
+  .strip img.shot-img{ height:150px; }
+  .strip{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin:8px 0; }
+  .strip .shot{ height:150px; }
+  .note{ color:var(--dim); font-size:9.5px; text-align:center; margin-top:2px; }
+  .green{ color:var(--green); }
+  .foot{ margin-top:16px; padding-top:10px; border-top:2px solid var(--gold2); text-align:center; color:var(--dim); }
+  .foot .ct{ color:var(--gold); font-family:"Trebuchet MS",Arial,sans-serif; font-weight:700; font-size:13px; }
+  @page{ size:A4; margin:11mm; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="head">
+    <div>
+      <h1 class="brand">GLADIATOR</h1>
+      <div class="sub">CRASH &times; SLOT HYBRID &nbsp;|&nbsp; Game Sheet</div>
+    </div>
+    <div class="badges">
+      <span class="badge">Game Type: Crash / Mini&nbsp;Game</span>
+      <span class="badge">RTP 96%</span>
+      <span class="badge">Max win x1000</span>
+      <span class="badge">Provably Fair</span>
+      <span class="badge">HTML5 / PWA</span>
+    </div>
+  </div>
+
+  <p class="lead"><b>Gladiator is a one-of-a-kind cross-genre title that fuses CRASH and
+  SLOT mechanics.</b> Every fight in the Roman arena is a spin: loot raises your multiplier,
+  and at any moment the player decides - take the win (cash out, like in crash) or risk it
+  for more.</p>
+
+  <!-- HERO SCREENSHOT -->
+  <img class="shot-img hero" src="gameplay.webp" alt="Gladiator gameplay - the arena and a fight" />
+
+  <p>The crash format won players over with the thrill of the cash-out moment and fast
+  rounds. We build on that core and add a rewarding slot layer - item drops, rarities and
+  progression - so the game stays just as easy to play but gives players far more to chase.
+  In doing so we <b>capture the market's two biggest audiences with a single title</b>:
+  crash fans and slot players. Wider funnel, higher conversion and retention.</p>
+
+  <h2>Specs</h2>
+  <table class="spec">
+    <tr><th>Game Type</th><td>Crash (Mini Game / Instant Win)</td></tr>
+    <tr><th>RTP</th><td>96% (configurable 90-98%)</td></tr>
+    <tr><th>Max win</th><td>x1000 of the bet</td></tr>
+    <tr><th>Volatility</th><td>configurable: Safe &rarr; Standard &rarr; Aggressive &rarr; Risk</td></tr>
+    <tr><th>Devices</th><td>Desktop, Tablet, Mobile</td></tr>
+    <tr><th>Technology</th><td>HTML5 / PWA, portrait, mobile-first</td></tr>
+    <tr><th>Fairness</th><td>Provably Fair (commit/reveal)</td></tr>
+  </table>
+
+  <h2>Key advantages</h2>
+  <div class="adv">
+    <div class="card"><b>Recognizable theme - demand out of the box</b>Gladiators and the
+      Roman arena are among the most recognizable images in the world. Understood instantly,
+      no learning curve, works in every market and clicks harder in the lobby.</div>
+    <div class="card"><b>Two audiences in one</b>The crash + slot hybrid reaches both market
+      segments on a single integration - a rare edge among titles.</div>
+    <div class="card"><b>Higher player LTV</b>Progression and daily tournaments give players
+      a reason to return, the dual crash + loot loop lengthens sessions, autoplay drives more
+      rounds. More retention and volume = more lifetime value.</div>
+    <div class="card"><b>A new format</b>A sense of skill (the cash-out decision) with the
+      casino's RTP fully protected - a combination classic slots don't offer.</div>
+  </div>
+
+  <h2>Gameplay</h2>
+  <ul>
+    <li><b>Place a bet</b> - step into the arena.</li>
+    <li>Automated fight. <b>Win</b> - an item drops (spins on the loot reel) and raises your
+      multiplier. <b>Loss</b> - bust, the bet is gone.</li>
+    <li><b>CASH OUT</b> to bank <i>bet &times; multiplier</i>, or <b>CONTINUE</b> to push
+      further. The multiplier grows with no ceiling; the payout is capped by the max-win limit.</li>
+  </ul>
+
+  <h2>Loot system (items)</h2>
+  <p>Every win drops an <b>item of one rarity</b> (6 tiers: Common, Rare, Epic, Legendary,
+  Mythic + jackpots), revealed on the loot reel.</p>
+  <ul>
+    <li><b>3 item slots.</b> A new tier fills a free slot; once all are taken, a rarer item
+      replaces the weakest.</li>
+    <li><b>Stacking is the key to big wins.</b> A duplicate of an equipped tier stacks
+      (Mythic x2, x3 ...) for the full tier multiplier; total = <i>tier^count</i> across slots -
+      the multiplier grows exponentially with no ceiling.</li>
+    <li><b>A weaker drop = consolation:</b> a minimal bump (+2%) and a chance at a star -
+      a win is never empty.</li>
+  </ul>
+
+  <h2>Graphics &amp; presentation</h2>
+  <ul>
+    <li><b>Cinematic Roman arena</b> - detailed background, torches, a living crowd, effects
+      (sparks, coins, roses, win banners).</li>
+    <li><b>Visual character gradation.</b> Player and opponent evolve with the multiplier:
+      <b>6 visual tiers</b> - up to a demonic form; the camera pushes in as the tier climbs.</li>
+    <li><b>Low-FX mode</b> - lighter graphics for budget devices.</li>
+  </ul>
+
+  <!-- SCREENSHOT STRIP -->
+  <div class="strip">
+    <img class="shot-img" src="lootreel.webp" alt="Loot reel" />
+    <img class="shot-img" src="progresion.webp" alt="Character gradation across tiers" />
+    <img class="shot-img" src="leaderboard1.webp" alt="Daily Arena leaderboard" />
+  </div>
+
+  <h2>Promo &amp; retention - Daily Arena (star tournaments)</h2>
+  <p>The star leaderboard turns solo play into a <b>multiplayer competition every day</b>.
+  Players earn <b>stars</b> for wins (shown on the loot reel; <b>they do not affect RTP or
+  payouts</b>). A <b>real cash prize every day</b> directly lifts LTV.</p>
+  <ul class="sub-ul">
+    <li><b>Account level boosts the star chance</b> - easier to break into the top.</li>
+    <li><b>Levels and the leaderboard reset every 24 hours (UTC)</b> - everyone starts at
+      level 1, a fresh fair race, the daily-return habit.</li>
+    <li>Pool, prize split and schedule are <b>configurable per campaign</b>.</li>
+  </ul>
+
+  <h2>Math and fairness</h2>
+  <p>The house edge is taken once on entry, <b>every CONTINUE is EV-neutral</b> &rarr; RTP is
+  invariant to player strategy. Validated by Monte-Carlo (millions of runs), with a
+  machine-readable <b>PAR sheet</b> for the lab (GLI-19 / iTech Labs). Each outcome is derived
+  from <i>serverSeed + clientSeed + nonce</i> (HMAC-SHA256); the hash is published before the
+  round and the seed revealed after - with a built-in verifier.</p>
+
+  <h2>Technology and integration (operator-ready)</h2>
+  <ul>
+    <li><b>Server-authoritative RGS</b> - all outcomes on the server, the client only renders.</li>
+    <li><b>Seamless Wallet API</b> - balance owned by the operator (HMAC-signed, idempotent, rollback).</li>
+    <li><b>Stateless rounds (Redis)</b> - horizontal scaling with no sticky sessions.</li>
+    <li><b>Durable storage</b> (Postgres), <b>Auth</b> (JWT), iframe embedding.</li>
+    <li><b>Observability</b> - /health, /ready, Prometheus /metrics (live RTP), JSON logs.</li>
+    <li><b>Security</b> - validation, rate-limiting, CSP/HSTS, TLS/WSS; <span class="green">npm audit = 0 vulnerabilities</span>.</li>
+    <li><b>Responsible gaming</b> - limits, reality checks, self-exclusion, audit log.</li>
+  </ul>
+
+  <h2>In summary</h2>
+  <p>Gladiator is a finished commercial product at the intersection of the two most in-demand
+  formats. A recognizable theme drives demand from the first glance; the crash + slot hybrid
+  captures both audiences on a single integration; daily cash-prize tournaments and progression
+  work for retention and LTV. Under the hood: certifiable math, seamless integration, scaling
+  and observability. Ready to integrate and configurable to the operator's brand.</p>
+
+  <div class="foot">
+    <p class="ct">Contact: ronigames.hq@gmail.com</p>
+  </div>
+
+</div>
+</body>
+</html>

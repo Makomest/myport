@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <base href="/" />
+  <title>Gladiator - RoniGaming</title>
+  <meta name="description" content="A slot from the RoniGaming portfolio. View the specs and play the demo." />
+  <meta property="og:title" content="RoniGaming - a slot from the portfolio" />
+  <meta property="og:description" content="View the specs and play the demo." />
+  <meta property="og:type" content="website" />
+  <meta property="og:image" content="https://ronigames.org/assets/og.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:image" content="https://ronigames.org/assets/og.png" />
+  <link rel="icon" type="image/png" href="assets/logo-favicon.png" />
+  <link rel="preload" href="assets/fonts/satoshi-400.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="assets/fonts/general-sans-600.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body>
+
+  <!-- NAV -->
+  <header class="nav">
+    <div class="nav__inner">
+      <a href="/" class="brand" aria-label="ronIGAMING"><img class="brand__logo" src="assets/logo-mark.png" alt="ronIGAMING" /></a>
+      <nav class="nav__links" aria-label="Primary">
+        <a href="/#games">Games</a>
+        <a href="/#about">About</a>
+      </nav>
+      <div class="nav__cta">
+        <a href="/#contact" class="btn btn--ghost">Get in touch</a>
+      </div>
+      <button class="nav__burger" aria-label="Menu" aria-expanded="false" aria-controls="mobile-menu"><span></span></button>
+    </div>
+  </header>
+  <div class="nav__menu" id="mobile-menu">
+    <a href="/#games">Games</a>
+    <a href="/#about">About</a>
+    <a href="/#contact" class="btn btn--primary">Get in touch</a>
+  </div>
+
+  <main id="game-root">
+    <!-- rendered from assets/js/games.js based on ?game=slug -->
+    <noscript>
+      <section class="section wrap"><p class="muted">Enable JavaScript to view this game. Or head back to the <a class="accent" href="/#games">portfolio</a>.</p></section>
+    </noscript>
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="wrap">
+      <div class="footer__top">
+        <a href="/" class="brand"><img class="brand__logo" src="assets/logo-mark.png" alt="" />ronIGAMING</a>
+        <nav class="footer__links" aria-label="Footer">
+          <a href="/#games">Games</a>
+          <a href="/#about">About</a>
+          <a href="/#contact">Contact</a>
+        </nav>
+      </div>
+      <div class="footer__note">
+        <span class="age"><b>18+</b> Games shown are demos for entertainment. Play responsibly.</span>
+        <span>&copy; <span data-year>2026</span> RoniGaming. ronigames.org</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- DEMO MODAL -->
+  <div class="modal" id="demo-modal" role="dialog" aria-modal="true" aria-label="Game demo">
+    <div class="modal__box">
+      <button class="modal__close" data-close aria-label="Close demo">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+      <iframe class="modal__frame" title="Game demo" allow="autoplay; fullscreen"></iframe>
+      <div class="modal__fallback">
+        <h3 data-fb-title>Demo</h3>
+        <p>The playable demo for this title is not connected yet. Add the demo URL in <strong>assets/js/games.js</strong> and it loads right here.</p>
+        <button class="btn btn--ghost" data-close>Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="assets/js/games.js"></script>
+  <script src="assets/js/main.js"></script>
+</body>
+</html>

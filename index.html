@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RoniGaming - iGaming slot studio</title>
+  <meta name="description" content="RoniGaming designs and builds high-end iGaming slots. Browse the portfolio, play the demos, and get in touch." />
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="RoniGaming - iGaming slot design portfolio" />
+  <meta property="og:description" content="High-end slot games, built to be played. Browse the work and try the demos." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://ronigames.org" />
+  <meta property="og:image" content="https://ronigames.org/assets/og.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="RoniGaming - iGaming slot design portfolio" />
+  <meta name="twitter:description" content="High-end slot games, built to be played. Browse the work and try the demos." />
+  <meta name="twitter:image" content="https://ronigames.org/assets/og.png" />
+
+  <link rel="icon" type="image/png" href="assets/logo-favicon.png" />
+  <link rel="preload" href="assets/fonts/satoshi-400.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="assets/fonts/general-sans-600.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body>
+
+  <!-- NAV -->
+  <header class="nav">
+    <div class="nav__inner">
+      <a href="/" class="brand" aria-label="ronIGAMING"><img class="brand__logo" src="assets/logo-mark.png" alt="ronIGAMING" /></a>
+      <nav class="nav__links" aria-label="Primary">
+        <a href="#build">Process</a>
+        <a href="#games">Games</a>
+        <a href="/portfolio">Portfolio</a>
+        <a href="#about">About</a>
+      </nav>
+      <div class="nav__cta">
+        <a href="#contact" class="btn btn--ghost">Get in touch</a>
+      </div>
+      <button class="nav__burger" aria-label="Menu" aria-expanded="false" aria-controls="mobile-menu"><span></span></button>
+    </div>
+  </header>
+  <div class="nav__menu" id="mobile-menu">
+    <a href="#build">Process</a>
+    <a href="#games">Games</a>
+    <a href="/portfolio">Portfolio</a>
+    <a href="#about">About</a>
+    <a href="#contact" class="btn btn--primary">Get in touch</a>
+  </div>
+
+  <main>
+    <!-- HERO -->
+    <section class="hero">
+      <div class="hero__bg" aria-hidden="true">
+        <video class="hero__video" autoplay muted loop playsinline preload="auto">
+          <source src="assets/video/hero.mp4" type="video/mp4" />
+        </video>
+        <div class="hero__scrim"></div>
+      </div>
+      <div class="wrap hero__inner">
+      <div class="hero__grid">
+        <div class="hero__copy reveal">
+          <span class="hero__role"><span class="line"></span> iGaming game designer and developer</span>
+          <h1 class="display">Slot games people <span class="grad-text italic">remember</span>.</h1>
+          <p class="lead">Design and build casino slots from the first sketch to the final spin, then hand operators a game that players actually return to.</p>
+          <div class="hero__cta">
+            <a href="#games" class="btn btn--primary btn--lg">See the games</a>
+            <a href="#about" class="btn btn--ghost btn--lg">About</a>
+          </div>
+        </div>
+
+        <a class="showcase" href="/portfolio" aria-label="View the games portfolio">
+          <img class="showcase__art" src="assets/glad-card.webp" alt="Gladiator game art" fetchpriority="high" />
+        </a>
+      </div>
+      </div>
+    </section>
+
+    <!-- GAMES -->
+    <section class="section wrap" id="games">
+      <div class="shead reveal">
+        <span class="kicker">Portfolio</span>
+        <h2 class="display" style="margin-top:.9rem">Selected slots, ready to spin</h2>
+        <p class="lead">Each title ships with its own math model, art direction, and bonus design. Open one to see the specs and play the demo.</p>
+      </div>
+      <div class="games" id="games-grid" aria-label="Game portfolio">
+        <!-- rendered from assets/js/games.js -->
+        <noscript><p class="muted">Enable JavaScript to browse the game portfolio.</p></noscript>
+      </div>
+    </section>
+
+    <!-- ABOUT -->
+    <section class="section wrap" id="about">
+      <div class="about">
+        <div class="about__photo reveal">
+          <img src="assets/logo.png" alt="ronIGAMING logo" loading="lazy" />
+        </div>
+        <div class="reveal">
+          <h2 class="display">Turning math into moments</h2>
+          <p class="lead" style="margin-top:1.25rem">I started on the art side and fell for the math behind a good slot: the rhythm of near misses, the weight of a free-spins trigger, the exact second a win lands. Today I take a game from concept and paytable through art, sound, and front-end build, and ship it certification ready.</p>
+          <p class="muted" style="margin-top:1rem;max-width:60ch">If you run a casino brand or a studio and want a slot that feels considered rather than cloned, that is the work I do.</p>
+          <div class="stats">
+            <div class="stat"><b>1</b><span>Games shipped</span></div>
+            <div class="stat"><b>0</b><span>Studios and operators</span></div>
+            <div class="stat"><b>1 yr</b><span>In iGaming</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- BUILD: scroll-assembled slot -->
+    <section class="build section wrap" id="build">
+      <div class="shead reveal">
+        <h2 class="display">From code to a live slot</h2>
+        <p class="lead">Every game is built in the open here. Move through the steps and the machine assembles itself, from a math model into a board you can play.</p>
+      </div>
+      <div class="build__inner">
+        <div class="build__visual">
+          <div class="build__stage" id="slot-mount" aria-hidden="true"></div>
+        </div>
+        <div class="build__steps">
+          <div class="rail" aria-hidden="true"><span class="rail__fill"></span></div>
+          <article class="build__step" data-step="1">
+            <span class="build__num grad-text">Step 01</span>
+            <h3 class="display">Math model and code</h3>
+            <p>Every slot starts as numbers. The paytable, hit rate, volatility, and RTP are modeled and simulated millions of times before a single pixel is drawn.</p>
+          </article>
+          <article class="build__step" data-step="2">
+            <span class="build__num grad-text">Step 02</span>
+            <h3 class="display">The reels take shape</h3>
+            <p>Reel count, rows, and ways to win. This grid is the skeleton the entire game hangs on, so it is set before anything else.</p>
+          </article>
+          <article class="build__step" data-step="3">
+            <span class="build__num grad-text">Step 03</span>
+            <h3 class="display">Symbols on the board</h3>
+            <p>Low pays, high pays, wilds, and scatters. Each symbol is placed and weighted so the board stays readable at a single glance.</p>
+          </article>
+          <article class="build__step" data-step="4">
+            <span class="build__num grad-text">Step 04</span>
+            <h3 class="display">Bonus and win logic</h3>
+            <p>Paylines, free spins, and multipliers. These are the moments that make a player lean in and keep coming back.</p>
+          </article>
+          <article class="build__step" data-step="5">
+            <span class="build__num grad-text">Step 05</span>
+            <h3 class="display">UI and launch</h3>
+            <p>Controls, balance, autoplay, and a responsive build. The game is integrated to your platform and prepared for certification.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- CONTACT -->
+    <section class="section wrap" id="contact">
+      <div class="cta reveal">
+        <h2 class="display">Contact us</h2>
+        <p class="lead">Want to buy a ready iGaming slot, or order a custom game built from scratch? Send a message and tell me what you need.</p>
+        <form class="cform" id="contact-form" novalidate>
+          <div class="field">
+            <label for="cf-name">Name</label>
+            <input id="cf-name" name="name" type="text" autocomplete="name" required>
+            <span class="field__err"></span>
+          </div>
+          <div class="field">
+            <label for="cf-email">Email</label>
+            <input id="cf-email" name="email" type="email" autocomplete="email" required>
+            <span class="field__err"></span>
+          </div>
+          <div class="field">
+            <label for="cf-msg">About your project</label>
+            <textarea id="cf-msg" name="message" rows="4" required></textarea>
+            <span class="field__err"></span>
+          </div>
+          <button class="btn btn--primary btn--lg" type="submit">Send message</button>
+          <p class="cform__status" data-form-status role="status" aria-live="polite"></p>
+        </form>
+        <p class="cform__alt">Prefer email? <a href="mailto:ronigames.hq@gmail.com">ronigames.hq@gmail.com</a></p>
+        <div class="socials">
+          <a href="https://t.me/Roneviy" rel="noopener" target="_blank">Telegram</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="wrap">
+      <div class="footer__top">
+        <a href="/" class="brand"><img class="brand__logo" src="assets/logo-mark.png" alt="" />ronIGAMING</a>
+        <nav class="footer__links" aria-label="Footer">
+          <a href="#games">Games</a>
+          <a href="#about">About</a>
+          <a href="#contact">Contact</a>
+        </nav>
+      </div>
+      <div class="footer__note">
+        <span class="age"><b>18+</b> Games shown are demos for entertainment. Play responsibly.</span>
+        <span>&copy; <span data-year>2026</span> RoniGaming. ronigames.org</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- DEMO MODAL -->
+  <div class="modal" id="demo-modal" role="dialog" aria-modal="true" aria-label="Game demo">
+    <div class="modal__box">
+      <button class="modal__close" data-close aria-label="Close demo">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+      <iframe class="modal__frame" title="Game demo" allow="autoplay; fullscreen"></iframe>
+      <div class="modal__fallback">
+        <h3 data-fb-title>Demo</h3>
+        <p>The playable demo for this title is not connected yet. Add the demo URL in <strong>assets/js/games.js</strong> and it loads right here.</p>
+        <button class="btn btn--ghost" data-close>Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="assets/js/games.js"></script>
+  <script src="assets/js/main.js"></script>
+</body>
+</html>

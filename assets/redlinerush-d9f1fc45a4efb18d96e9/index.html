@@ -1,0 +1,1117 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    <title>Redline Rush</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet" />
+    <script type="importmap">
+      {
+        "imports": {
+          "gladiator-engine/dist/engine.js": "./engine/engine.js",
+          "gladiator-engine/dist/config.js": "./engine/config.js"
+        }
+      }
+    </script>
+    <style>
+      :root {
+        --bg: #0a0e1a; --panel: #141d33; --panel2: #0e1626; --line: rgba(120,150,220,0.18);
+        --ink: #eef3ff; --dim: #8b97b8; --orange: #ff7a1a; --orange2: #ffb24d;
+        --red: #ff3142; --blue: #2f8bff; --yellow: #ffce33;
+        --green1: #25cf63; --green2: #18a850; --shadow: 0 12px 36px rgba(0,0,0,.5);
+      }
+      * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+      html, body { margin: 0; height: 100%; overflow: hidden; background: var(--bg);
+        color: var(--ink); font-family: "Rajdhani", system-ui, sans-serif; }
+      #app { position: relative; display: flex; flex-direction: column; height: 100%; }
+
+      /* ============ HEADER ============ */
+      header { position: relative; z-index: 6; display: flex; align-items: center; justify-content: center;
+        padding: 12px 18px 10px; min-height: 60px; }
+      .logo { height: 42px; }
+      .walletbox { position: absolute; right: 22px; top: 10px; display: flex; align-items: center; gap: 12px; }
+      .balance { text-align: right; }
+      .balance .label { font-size: 11px; letter-spacing: 2px; color: var(--dim); text-transform: uppercase; }
+      .balance .val { font-family: "Orbitron"; font-weight: 700; font-size: 27px; }
+      #topup { background: none; border: 1px solid var(--line);
+        color: var(--dim); border-radius: 8px; padding: 6px 11px; font-family: "Rajdhani"; font-weight: 700; font-size: 13px; cursor: pointer; }
+
+      /* ============ SOUND CONTROL ============ */
+      .soundctl { position: relative; }
+      .soundbtn { background: none; border: 1px solid var(--line); color: var(--ink); border-radius: 8px;
+        width: 38px; height: 34px; font-size: 16px; line-height: 1; cursor: pointer; }
+      .soundbtn.off { color: var(--dim); }
+      .soundpop { position: absolute; top: calc(100% + 8px); right: 0; z-index: 30; width: 168px; display: none;
+        flex-direction: column; gap: 9px; padding: 12px; border-radius: 10px;
+        background: rgba(14,22,40,.97); border: 1px solid var(--line); box-shadow: var(--shadow); }
+      .soundpop.open { display: flex; }
+      .soundpop .sprow { display: flex; justify-content: space-between; font-size: 11px; letter-spacing: 1px;
+        color: var(--dim); text-transform: uppercase; font-family: "Orbitron"; font-weight: 700; }
+      .soundpop #soundVol { width: 100%; accent-color: var(--orange); cursor: pointer; }
+      .soundpop .mutebtn { background: #0a1120; border: 1px solid var(--line); color: var(--ink); border-radius: 8px;
+        padding: 8px 0; font-family: "Orbitron"; font-weight: 700; font-size: 12px; cursor: pointer; }
+      .soundpop .mutebtn.muted { color: var(--red); border-color: var(--red); }
+
+      /* ============ ROUND HISTORY (tile under balance) ============ */
+      .rh-toggle, .rh-close { display: none; } /* shown only on mobile (drawer handle / close) */
+      .rhistory { position: absolute; z-index: 8; right: 22px; top: 82px; display: flex; flex-direction: column; gap: 4px;
+        padding: 9px 11px; border-radius: 12px; pointer-events: none;
+        background: rgba(8,12,22,.72); border: 1px solid var(--line); backdrop-filter: blur(6px); box-shadow: var(--shadow); }
+      .rhtitle { font-family: "Orbitron"; font-weight: 800; font-size: 10px; letter-spacing: 1.5px; color: var(--dim);
+        text-transform: uppercase; margin-bottom: 3px; }
+      .rhrow { display: flex; align-items: center; gap: 9px; white-space: nowrap; padding: 2px 5px; border-radius: 8px; }
+      .rhrow.red { color: var(--red); background: rgba(255,49,66,.10); }
+      .rhrow.blue { color: var(--blue); background: rgba(47,139,255,.12); }
+      .rhrow.yellow { color: var(--yellow); background: rgba(255,206,51,.10); }
+      .rhrow .chips { display: flex; gap: 3px; }
+      .rhchip { flex: none; font-family: "Orbitron"; font-weight: 700; font-size: 10px; padding: 3px 7px; border-radius: 5px;
+        min-width: 38px; text-align: center; white-space: nowrap; background: rgba(255,255,255,.05); border: 1px solid var(--line); color: var(--dim); }
+      .rhchip.hi { color: currentColor; border-color: currentColor; background: rgba(255,255,255,.03); box-shadow: 0 0 9px -3px currentColor; }
+      .rhchip.empty { color: var(--dim); opacity: .35; }
+      input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+      input[type=number] { -moz-appearance: textfield; appearance: textfield; }
+
+      /* ============ LEADER (header, left of the logo) ============ */
+      .leaders { position: absolute; z-index: 7; left: 18px; top: 50%; transform: translateY(-50%);
+        display: flex; align-items: baseline; gap: 8px; }
+      .leaders .label { font-size: 11px; letter-spacing: 2px; color: var(--dim); text-transform: uppercase; }
+      .leaders .big { font-family: "Orbitron"; font-weight: 900; font-size: 24px; line-height: 1;
+        color: var(--orange2); text-shadow: 0 0 16px currentColor; transition: color .2s; }
+
+      /* ============ TRACK ============ */
+      .track { position: relative; flex: 1; min-height: 0; overflow: hidden;
+        background: #0a0e1a url(assets/bg-landscape2.png) repeat-x 0 center / auto 100%; }
+      /* drivable band measured from the bg image: lanes between ~25% and ~74% */
+      .lanes { position: absolute; left: 0; right: 0; top: 25%; bottom: 26%; display: flex; flex-direction: column; }
+      .lane { position: relative; flex: 1; cursor: pointer; }
+      .lanes.locked .lane { cursor: default; }
+
+      /* ============ START LIGHTS ============ */
+      .startlights { position: absolute; z-index: 9; left: 50%; top: 50%; transform: translate(-50%,-50%);
+        display: none; flex-direction: column; align-items: center; gap: 14px; pointer-events: none; }
+      .startlights.show { display: flex; }
+      .lpole { display: flex; gap: 14px; padding: 16px 20px; border-radius: 16px;
+        background: rgba(8,12,22,.88); border: 2px solid #1c2740; box-shadow: 0 16px 44px rgba(0,0,0,.6); }
+      .lcol { display: flex; flex-direction: column; gap: 9px; }
+      .bulb { display: block; width: 36px; height: 36px; border-radius: 50%; background: #2a0a0e;
+        box-shadow: inset 0 0 9px rgba(0,0,0,.85); transition: background .1s, box-shadow .1s; }
+      .lcol.on .bulb { background: radial-gradient(circle at 40% 35%, #ff8a8a, #ff1b2c 58%, #8e0007 100%);
+        box-shadow: 0 0 20px 2px rgba(255,40,55,.85), inset 0 0 6px rgba(255,255,255,.4); }
+      .startlights.go .bulb { background: radial-gradient(circle at 40% 35%, #9dffbd, #18c95a 58%, #0a8c44 100%);
+        box-shadow: 0 0 22px 3px rgba(37,207,99,.9), inset 0 0 6px rgba(255,255,255,.4); }
+      .gotext { font-family: "Orbitron"; font-weight: 900; font-size: 60px; letter-spacing: 2px; color: var(--green1);
+        text-shadow: 0 0 26px rgba(37,207,99,.9), 0 2px 6px rgba(0,0,0,.5); opacity: 0; transform: scale(.7); transition: opacity .15s, transform .15s; }
+      .startlights.go .gotext { opacity: 1; transform: scale(1); }
+      /* highlight starts just past the LIVE DRIVERS panel (panel right edge ≈ 296px) */
+      .lane.sel::before { content: ""; position: absolute; z-index: 3; top: 4px; bottom: 4px; left: 308px; right: 6px; border-radius: 16px;
+        border: 2.5px solid currentColor; pointer-events: none;
+        box-shadow: inset 0 0 60px -8px currentColor, 0 0 26px -2px currentColor;
+        animation: selpulse 1.3s ease-in-out infinite; }
+      .lane.sel::after { content: "◂ YOUR CAR"; position: absolute; z-index: 3; right: 12px; left: auto; bottom: 10px;
+        font-family: "Orbitron"; font-weight: 800; font-size: 11px; letter-spacing: 1px; color: currentColor;
+        background: rgba(8,12,22,.78); padding: 4px 9px; border-radius: 7px; border: 1px solid currentColor;
+        box-shadow: 0 0 12px -2px currentColor; text-shadow: 0 0 6px currentColor; pointer-events: none; }
+      @keyframes selpulse { 0%,100% { box-shadow: inset 0 0 60px -8px currentColor, 0 0 22px -2px currentColor; }
+        50% { box-shadow: inset 0 0 80px -4px currentColor, 0 0 40px 0 currentColor; } }
+      .lane.red { color: var(--red); } .lane.blue { color: var(--blue); } .lane.yellow { color: var(--yellow); }
+
+      .trail { position: absolute; z-index: 1; top: 54%; height: 14%; transform: translateY(-50%);
+        background: linear-gradient(90deg, transparent, currentColor 90%); border-radius: 60px;
+        filter: blur(8px) saturate(1.7) brightness(1.35); mix-blend-mode: screen; opacity: 0; transition: opacity .15s; pointer-events: none; }
+      /* camera positions the wrapper; the car body + wheels + exhaust live inside and animate */
+      .carwrap { position: absolute; z-index: 2; top: 50%; height: 96%; transform: translate(-50%,-50%);
+        will-change: left, transform; pointer-events: none; }
+      .car { display: block; height: 100%; width: auto; will-change: transform;
+        filter: saturate(1.55) brightness(1.22) contrast(1.04) drop-shadow(0 10px 12px rgba(0,0,0,.5)); }
+      .wheels { position: absolute; inset: 0; pointer-events: none; } /* container: all frames preloaded, one shown */
+      .wheels img { position: absolute; inset: 0; width: 100%; height: 100%; display: none;
+        filter: saturate(1.55) brightness(1.22) contrast(1.04); } /* rotating wheel frames overlaid on the car body */
+      .wheels img.on { display: block; }
+      .car.dead { filter: grayscale(.65) brightness(.6) drop-shadow(0 10px 12px rgba(0,0,0,.5)); } /* dimmed, still visible as it slides off */
+      .car.dead.winner { filter: saturate(1.7) brightness(1.4) drop-shadow(0 0 22px currentColor); } /* last survivor bolts away at full power */
+      /* neon exhaust glow behind the car (faces right, so the glow sits on its left), in the car's colour */
+      .exhaust { position: absolute; left: 2%; top: 50%; width: 40%; height: 52%; transform: translate(-50%,-50%);
+        border-radius: 50%; pointer-events: none; opacity: 0; color: currentColor; mix-blend-mode: screen;
+        background: radial-gradient(ellipse at right, currentColor 0%, color-mix(in srgb, currentColor 55%, transparent) 45%, transparent 72%);
+        filter: blur(6px) saturate(1.6) brightness(1.3); }
+      .shadow { position: absolute; z-index: 1; top: 62%; transform: translate(-50%,-50%); border-radius: 50%;
+        background: radial-gradient(ellipse at center, rgba(0,0,0,.55) 0%, rgba(0,0,0,.3) 46%, transparent 72%);
+        filter: blur(3px); opacity: 0; pointer-events: none; }
+      .mult { position: absolute; z-index: 5; top: 1%; font-family: "Orbitron"; font-weight: 900;
+        font-size: clamp(24px, 3.6vw, 48px); transform: translateX(-50%); letter-spacing: 1px; pointer-events: none;
+        -webkit-text-fill-color: #fff;
+        text-shadow: 0 0 6px currentColor, 0 0 14px currentColor, 0 0 28px currentColor, 0 0 50px currentColor, 0 2px 4px rgba(0,0,0,.5); }
+      .mult.dead { -webkit-text-fill-color: currentColor; } /* final crash value, tinted in the car's colour */
+      .mult.parked { left: 314px; transform: none; } /* crashed value parks at the left edge of the glow, right of LIVE DRIVERS */
+
+      /* ============ LIVE DRIVERS ============ */
+      .drivers-toggle, .drivers-close { display: none; } /* shown only on mobile (drawer handle / close) */
+      .drivers { position: absolute; z-index: 4; left: 14px; top: 14px; width: 282px;
+        background: linear-gradient(180deg, rgba(14,22,40,.62), rgba(9,14,26,.55)); backdrop-filter: blur(3px);
+        border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; box-shadow: var(--shadow);
+        text-shadow: 0 1px 3px rgba(0,0,0,.85); }
+      .drivers h4 { margin: 0 0 6px; font-family: "Orbitron"; font-weight: 700; font-size: 13px; letter-spacing: 1px; }
+      .drivers h4 b { color: var(--red); }
+      .dhead, .drow { display: grid; grid-template-columns: 20px 1fr 58px 50px; align-items: center; gap: 5px; }
+      .dhead { font-size: 10px; letter-spacing: 1px; color: var(--dim); text-transform: uppercase;
+        padding-bottom: 5px; border-bottom: 1px solid var(--line); }
+      #driverList { max-height: 60vh; overflow-y: auto; overflow-x: hidden; padding-right: 4px; }
+      #driverList::-webkit-scrollbar { width: 5px; }
+      #driverList::-webkit-scrollbar-thumb { background: rgba(120,150,220,.3); border-radius: 4px; }
+      .drow { padding: 5px 0; border-bottom: 1px solid rgba(120,150,220,.07); font-size: 13px; }
+      .drow .rk { color: var(--dim); } .drow .who { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .drow .col { font-weight: 700; } .drow .mx { font-family: "Orbitron"; font-weight: 700; font-size: 13px; text-align: right; }
+      .drow.you { background: rgba(255,122,26,.12); border-radius: 8px; box-shadow: inset 0 0 0 1.5px var(--orange); padding: 5px 6px; }
+      .col.red { color: var(--red); } .col.blue { color: var(--blue); } .col.yellow { color: var(--yellow); }
+      .mx.cashed { color: var(--green1); } .mx.lost { color: var(--red); opacity: .6; } .mx.red{color:var(--red)} .mx.blue{color:var(--blue)} .mx.yellow{color:var(--yellow)}
+
+      /* ============ NEXT RACE ============ */
+      .nextrace { position: absolute; z-index: 4; right: 0; bottom: 0; padding: 9px 20px 9px 30px;
+        background: linear-gradient(180deg, rgba(18,27,48,.95), rgba(11,17,31,.92)); border: none; border-top: 2px solid var(--orange);
+        clip-path: polygon(16% 0, 100% 0, 100% 100%, 0 100%); font-family: "Orbitron"; font-weight: 700; font-size: 15px; }
+      .nextrace .label { color: var(--dim); letter-spacing: 1px; font-size: 12px; }
+      .nextrace .t { color: var(--orange2); }
+
+      /* ============ CONTROLS ============ */
+      .controls { display: flex; gap: 14px; padding: 14px 18px 18px; background: var(--bg); }
+      .panel { background: linear-gradient(180deg, var(--panel), var(--panel2)); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; }
+      .betpanel { flex: 1; min-width: 0; }
+      /* desktop: the wrapper is invisible so BET 1 / BET 2 stay independent flex tiles;
+         on mobile it becomes one combined tile (see responsive section) */
+      .bets { display: contents; }
+      .betpanel .ptitle { font-family: "Orbitron"; font-weight: 800; font-size: 16px; margin-bottom: 10px; }
+      .carselect { display: flex; align-items: center; gap: 16px; margin: 0 18px; padding: 10px 16px;
+        background: linear-gradient(180deg, var(--panel), var(--panel2)); border: 1px solid var(--line); border-radius: 14px; }
+      .carselect .cslabel { flex: none; font-family: "Orbitron"; font-weight: 800; font-size: 13px;
+        letter-spacing: 1px; color: var(--dim); text-transform: uppercase; }
+      .carselect .carpick { flex: 1; margin-bottom: 0; }
+      .carpick { display: flex; gap: 8px; margin-bottom: 12px; }
+      .carchip { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: center; gap: 7px;
+        background: #0a1120; border: 1.5px solid var(--line); border-radius: 9px; padding: 8px 4px; cursor: pointer;
+        font-family: "Orbitron"; font-weight: 700; font-size: 12px; letter-spacing: .5px; color: var(--dim);
+        text-transform: uppercase; transition: border-color .12s, color .12s, box-shadow .12s, background .12s; }
+      .carchip .dot { width: 11px; height: 11px; border-radius: 50%; background: var(--c); box-shadow: 0 0 8px var(--c); flex: none; }
+      .carchip.red { --c: var(--red); } .carchip.blue { --c: var(--blue); } .carchip.yellow { --c: var(--yellow); }
+      .carchip:hover { border-color: var(--c); color: var(--ink); }
+      .carchip.on { color: var(--ink); border-color: var(--c); background: #0d1530;
+        box-shadow: inset 0 0 18px -6px var(--c), 0 0 10px -4px var(--c); }
+      .carchip:disabled { cursor: not-allowed; opacity: .45; }
+      .fld { min-width: 0; }
+      .fld + .fld { margin-top: 12px; }
+      .fld .l { display: flex; align-items: center; justify-content: space-between; gap: 8px;
+        font-size: 11px; letter-spacing: 1px; color: var(--dim); text-transform: uppercase; margin-bottom: 7px; }
+      .amtstep { display: flex; align-items: stretch; gap: 8px; }
+      .amtstep .amount { flex: 1; justify-content: center; }
+      .amtstep input.in { text-align: center; }
+      .amount { display: flex; align-items: center; height: 50px; background: #0a1120; border: 1px solid var(--line); border-radius: 9px; padding: 0 10px; }
+      .amount .cur { color: var(--dim); font-weight: 700; font-family: "Orbitron"; font-size: 18px; margin-right: 2px; }
+      .amount input.in { border: none; background: none; border-radius: 0; padding: 0 2px; height: 100%; }
+      input.in { width: 100%; background: #0a1120; border: 1px solid var(--line); color: var(--ink);
+        border-radius: 9px; padding: 0 12px; font-family: "Orbitron"; font-weight: 800; font-size: 22px; min-width: 0; }
+      .sbtn { flex: none; width: 50px; background: #0a1120; border: 1px solid var(--line); border-radius: 9px;
+        color: var(--ink); font-family: "Orbitron"; font-weight: 800; font-size: 24px; line-height: 1; cursor: pointer;
+        transition: border-color .12s, background .12s; }
+      .sbtn:hover { border-color: var(--orange); } .sbtn:active { background: #122036; }
+      .quickadd { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; margin-top: 8px; }
+      .quickadd button { background: #0a1120; border: 1px solid var(--line); border-radius: 8px; color: var(--dim);
+        padding: 9px 0; font-family: "Orbitron"; font-weight: 700; font-size: 14px; cursor: pointer;
+        transition: color .12s, border-color .12s, background .12s; }
+      .quickadd button:hover { color: var(--ink); border-color: var(--orange); }
+      .quickadd button:active { background: #122036; }
+      .switch { position: relative; display: inline-block; width: 40px; height: 22px; flex: none; cursor: pointer; }
+      .switch input { position: absolute; opacity: 0; width: 0; height: 0; }
+      .switch .sw { position: absolute; inset: 0; background: #0a1120; border: 1px solid var(--line); border-radius: 22px; transition: .15s; }
+      .switch .sw::before { content: ""; position: absolute; left: 2px; top: 50%; transform: translateY(-50%);
+        width: 15px; height: 15px; border-radius: 50%; background: var(--dim); transition: .15s; }
+      .switch input:checked + .sw { background: linear-gradient(180deg, var(--green1), var(--green2)); border-color: transparent; }
+      .switch input:checked + .sw::before { transform: translate(18px, -50%); background: #fff; }
+      .numfld { display: flex; align-items: center; height: 50px; background: #0a1120; border: 1px solid var(--line);
+        border-radius: 9px; padding: 0 12px; transition: opacity .15s; }
+      .numfld.off { opacity: .4; }
+      .numfld .pre, .numfld .suf { color: var(--dim); font-family: "Orbitron"; font-weight: 700; font-size: 16px; }
+      .numfld .pre { margin-right: 2px; } .numfld .suf { font-size: 13px; margin-left: 6px; }
+      .numfld input.in { border: none; background: none; border-radius: 0; padding: 0 2px; height: 100%; }
+      .betpanel .cashbtn { width: 100%; margin-top: 12px; }
+      .cashbtn { border: none; border-radius: 11px; padding: 6px 26px; min-height: 68px; cursor: pointer;
+        font-family: "Orbitron"; font-weight: 800; font-size: 17px; letter-spacing: .5px;
+        background: linear-gradient(180deg, var(--green1), var(--green2)); color: #fff;
+        box-shadow: 0 6px 18px rgba(37,207,99,.32); transition: transform .05s; white-space: nowrap; text-shadow: 0 1px 2px rgba(0,0,0,.3); }
+      .cashbtn:active { transform: scale(.97); }
+      .cashbtn .sub { display: block; font-size: 10px; font-weight: 700; opacity: .85; }
+      .cashbtn .cap { display: block; font-size: 12px; font-weight: 700; letter-spacing: 1px; opacity: .9; line-height: 1; }
+      .cashbtn .amt { display: block; font-size: 32px; font-weight: 900; line-height: 1.1; letter-spacing: .5px; }
+      .cashbtn:disabled { cursor: not-allowed; }
+      .cashbtn.waiting { background: linear-gradient(180deg, #2b3650, #1d2740); color: var(--dim); box-shadow: none; }
+      .cashbtn.won { background: linear-gradient(180deg, #1fd06e, #0c9a4e); }
+      .cashbtn.lost { background: linear-gradient(180deg, #3a1620, #2a1016); color: var(--red); box-shadow: none; }
+
+      /* ============ CHAT ============ */
+      .chatpanel { width: 360px; display: flex; flex-direction: column; padding: 12px 16px; min-height: 0; overflow: hidden; }
+      .chathead { flex: none; display: flex; justify-content: space-between; align-items: center; font-family: "Orbitron"; font-weight: 700; font-size: 14px; margin-bottom: 7px; }
+      .chathead .dots { color: var(--dim); letter-spacing: 2px; }
+      .chatlog { flex: 1 1 0; min-height: 0; overflow-y: auto; overflow-x: hidden; font-size: 14px; line-height: 1.55; }
+      .chatlog::-webkit-scrollbar { width: 5px; } .chatlog::-webkit-scrollbar-thumb { background: rgba(120,150,220,.3); border-radius: 4px; }
+      .chatlog .c b { color: var(--green1); font-weight: 700; } .chatlog .c.me b { color: var(--blue); }
+      .chatlog .sys { color: var(--orange2); font-style: italic; }
+      .chatin { flex: none; display: flex; gap: 7px; margin-top: 7px; }
+      .chatin input { flex: 1; background: #0a1120; border: 1px solid var(--line); color: var(--ink); border-radius: 8px; padding: 9px 11px; font-family: "Rajdhani"; font-size: 14px; }
+      .chatin button { background: none; border: 1px solid var(--line); color: var(--dim); border-radius: 8px; width: 40px; cursor: pointer; font-size: 16px; }
+
+      .verify { font-size: 11px; color: var(--dim); text-align: center; padding: 3px; cursor: pointer; min-height: 18px; }
+      .verify b.ok { color: var(--green1); } .verify b.bad { color: var(--red); }
+      .toast { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); background: #16203a;
+        border: 1px solid var(--line); padding: 9px 16px; border-radius: 10px; font-size: 14px; box-shadow: var(--shadow);
+        opacity: 0; transition: opacity .2s; pointer-events: none; z-index: 50; }
+      .toast.show { opacity: 1; }
+
+      /* ============ LOADING SPLASH ============ */
+      #loader { position: fixed; inset: 0; z-index: 100; display: flex; flex-direction: column; align-items: center;
+        justify-content: center; gap: 22px; background: radial-gradient(ellipse at center, #0e1730 0%, #060a14 75%);
+        transition: opacity .5s ease; }
+      #loader.hide { opacity: 0; pointer-events: none; }
+      .loader-logo { width: min(62%, 360px); filter: drop-shadow(0 0 30px rgba(255,122,26,.45)); animation: ldpulse 1.6s ease-in-out infinite; }
+      @keyframes ldpulse { 0%,100% { opacity: .85; transform: scale(.99); } 50% { opacity: 1; transform: scale(1); } }
+      .loader-bar { width: min(72%, 320px); height: 8px; border-radius: 6px; background: #0a1120; border: 1px solid var(--line); overflow: hidden; }
+      .loader-fill { height: 100%; width: 0%; border-radius: 6px;
+        background: linear-gradient(90deg, var(--orange), var(--orange2)); box-shadow: 0 0 12px var(--orange); transition: width .25s ease; }
+      .loader-text { font-family: "Orbitron", system-ui, sans-serif; font-weight: 700; font-size: 13px;
+        letter-spacing: 3px; color: var(--dim); text-transform: uppercase; }
+
+      /* ============ RESPONSIVE ============ */
+
+      /* Tablets / smaller laptops: shrink the track overlays so they don't crowd the cars */
+      @media (max-width: 1100px) {
+        .drivers { width: 240px; }
+        .dhead, .drow { grid-template-columns: 18px 1fr 50px 46px; }
+        .rhchip:nth-child(n+8) { display: none; }
+        .chatpanel { width: 300px; }
+      }
+
+      /* Compact viewports (phones + short/narrow windows): scroll the page vertically
+         instead of cramming a fixed full screen; the track keeps a sensible height. */
+      @media (max-width: 860px), (max-height: 620px) {
+        html, body { height: auto; min-height: 100%; overflow-x: hidden; overflow-y: auto; }
+        #app { height: auto; min-height: 100vh; min-height: 100dvh; }
+        .track { flex: none; height: clamp(220px, 42vh, 440px); }
+        header { min-height: 50px; padding: max(8px, env(safe-area-inset-top)) 12px 8px; }
+        .logo { height: 26px; }
+        .walletbox { right: max(10px, env(safe-area-inset-right)); top: 8px; gap: 8px; }
+        .balance .val { font-size: 18px; } #topup { display: none; }
+        .drivers { width: clamp(160px, 30%, 240px); left: 10px; top: 10px; padding: 9px; }
+        #driverList { max-height: 30vh; }
+        .leaders { left: 12px; } .leaders .big { font-size: 20px; }
+        .nextrace { font-size: 13px; padding: 8px 14px 8px 24px; }
+        .chatpanel { width: clamp(220px, 30%, 340px); }
+      }
+
+      /* Portrait phones: stack the betting controls full-width; tighten the overlays */
+      @media (max-width: 640px) {
+        .drivers { width: clamp(150px, 48%, 210px); }
+        .dhead { display: none; } .drivers h4 { font-size: 11px; }
+        .drow { grid-template-columns: 16px 1fr 46px; font-size: 11px; padding: 4px 0; } .drow .col { display: none; }
+        .leaders .label { font-size: 9px; letter-spacing: 1px; } .leaders .big { font-size: 18px; }
+        .lane.sel::before { left: 8px; } .mult.parked { left: 12px; }
+        .lane.sel::after { right: 10px; left: auto; bottom: 8px; font-size: 8px; padding: 2px 6px; letter-spacing: .5px; }
+        .startlights .lpole { gap: 8px; padding: 9px 11px; } .startlights .bulb { width: 22px; height: 22px; } .startlights .gotext { font-size: 36px; }
+
+        /* Last Rounds: compact, slide-in drawer from the right */
+        .rhistory { right: 0; top: 58px; gap: 3px; padding: 5px 7px; border-radius: 10px 0 0 10px;
+          transform: translateX(calc(100% + 6px)); transition: transform .25s ease; will-change: transform; }
+        .rhistory.open { transform: translateX(0); }
+        .rhrow .car { width: 26px; font-size: 8px; } .rhrow .car .sq { width: 7px; height: 7px; }
+        .rhchip { min-width: 26px; padding: 2px 5px; font-size: 9px; } .rhchip:nth-child(n+4) { display: none; }
+        .rh-toggle { display: block; position: absolute; right: 0; top: 12px; z-index: 9;
+          background: rgba(14,22,40,.92); border: 1px solid var(--line); border-right: none; color: var(--ink);
+          border-radius: 10px 0 0 10px; padding: 9px 11px; font-family: "Orbitron"; font-weight: 800;
+          font-size: 11px; letter-spacing: 1px; cursor: pointer; box-shadow: var(--shadow); }
+        .rh-close { display: block; position: absolute; top: 4px; right: 6px; z-index: 2; pointer-events: auto;
+          background: none; border: none; color: var(--dim); font-size: 15px; line-height: 1; cursor: pointer; padding: 4px 6px; }
+        .rh-close:active { color: var(--ink); }
+        /* sound control: out of the wallet row (so it doesn't crowd the logo), tucked under the LAST
+           handle — and slides down out of the way while the LAST ROUNDS panel is open */
+        .soundctl { position: absolute; top: 96px; right: 2px; z-index: 9; transition: top .25s ease; }
+        .soundctl.shift { top: 150px; }
+        .soundpop { width: 150px; right: 0; }
+
+        /* YOUR CAR — much smaller (slim chip row, no label) */
+        .carselect { margin: 8px 8px 0; gap: 6px; padding: 4px 7px; }
+        .carselect .cslabel { display: none; }
+        .carchip { padding: 4px 3px; font-size: 10px; gap: 4px; border-width: 1px; } .carchip .dot { width: 8px; height: 8px; }
+
+        .controls { flex-direction: column; gap: 10px; padding: 10px max(10px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left)); }
+        .chatpanel { width: 100%; order: 3; height: 190px; }
+
+        /* BET 1 + BET 2 = ONE tile, side by side, compact */
+        .bets { display: flex; flex-direction: row; width: 100%; overflow: hidden;
+          background: linear-gradient(180deg, var(--panel), var(--panel2)); border: 1px solid var(--line); border-radius: 14px; }
+        .bets .betpanel { flex: 1; min-width: 0; width: auto; background: none; border: none; border-radius: 0; padding: 12px 9px; }
+        .bets .betpanel + .betpanel { border-left: 1px solid var(--line); }
+        .bets .betpanel .ptitle { font-size: 14px; margin-bottom: 8px; }
+        .bets .fld .l { font-size: 9px; letter-spacing: .5px; gap: 4px; }
+        .bets .fld + .fld { margin-top: 9px; }
+        .bets .amount, .bets .numfld { height: 42px; padding: 0 8px; }
+        .bets .amount .cur, .bets .numfld .pre { font-size: 14px; }
+        .bets input.in { font-size: 17px; }
+        .bets .amtstep { gap: 5px; } .bets .sbtn { width: 34px; font-size: 19px; }
+        .bets .quickadd { gap: 4px; } .bets .quickadd button { font-size: 11px; padding: 6px 0; }
+        .bets .numfld .suf { font-size: 9px; }
+        .bets .switch { width: 34px; height: 19px; } .bets .switch .sw::before { width: 13px; height: 13px; }
+        .bets .switch input:checked + .sw::before { transform: translate(15px, -50%); }
+        .bets .cashbtn { min-height: 50px; padding: 4px 8px; }
+        .bets .cashbtn .amt { font-size: 20px; } .bets .cashbtn .cap { font-size: 9px; }
+
+        /* LIVE DRIVERS slide-in drawer from the left */
+        .drivers-toggle { display: block; position: absolute; left: 0; top: 12px; z-index: 6;
+          background: rgba(14,22,40,.92); border: 1px solid var(--line); border-left: none; color: var(--ink);
+          border-radius: 0 10px 10px 0; padding: 9px 11px; font-family: "Orbitron"; font-weight: 800;
+          font-size: 11px; letter-spacing: 1px; cursor: pointer; box-shadow: var(--shadow); }
+        .drivers-toggle b { color: var(--red); }
+        .drivers-close { display: block; position: absolute; top: 4px; right: 6px; z-index: 2;
+          background: none; border: none; color: var(--dim); font-size: 15px; line-height: 1; cursor: pointer; padding: 4px 6px; }
+        .drivers-close:active { color: var(--ink); }
+        .drivers { transform: translateX(calc(-100% - 24px)); transition: transform .25s ease; will-change: transform; }
+        /* when open, sit above the in-track multiplier numbers (z 5) and go opaque so they don't show through */
+        .drivers.open { transform: translateX(0); z-index: 7;
+          background: linear-gradient(180deg, rgba(14,22,40,.98), rgba(9,14,26,.97)); }
+      }
+
+      /* Small phones: nudge fonts/paddings so nothing overflows a ~360px screen */
+      @media (max-width: 400px) {
+        .carchip { font-size: 11px; padding: 7px 3px; gap: 4px; }
+        input.in { font-size: 18px; } .amount .cur { font-size: 15px; }
+        .sbtn { width: 42px; font-size: 21px; }
+        .quickadd { gap: 5px; } .quickadd button { font-size: 12px; padding: 8px 0; }
+        .cashbtn { min-height: 58px; } .cashbtn .amt { font-size: 26px; } .cashbtn .cap { font-size: 11px; }
+        .leaders .big { font-size: 16px; }
+        .betpanel .ptitle { font-size: 15px; }
+      }
+
+      /* Landscape phones / very short windows: keep controls in a row (width is ample) */
+      @media (max-height: 620px) and (orientation: landscape) {
+        .controls { flex-direction: row; }
+        .betpanel { flex: 1; } .chatpanel { order: 0; height: auto; }
+        .track { height: clamp(200px, 52vh, 360px); }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="loader">
+      <img class="loader-logo" src="assets/logo-redline-rush.png" alt="Redline Rush" />
+      <div class="loader-bar"><div class="loader-fill" id="loaderFill"></div></div>
+      <div class="loader-text" id="loaderText">Loading…</div>
+    </div>
+    <div id="app">
+      <header>
+        <div class="rhistory" id="rhistory"></div>
+        <div class="leaders"><span class="label">Leader</span><span class="big" id="lead">x1.00</span></div>
+        <img class="logo" src="assets/logo-redline-rush.png" alt="Redline Rush" />
+        <div class="walletbox">
+          <div class="soundctl" id="soundctl">
+            <button class="soundbtn" id="soundBtn" aria-label="Sound">🔊</button>
+            <div class="soundpop" id="soundPop">
+              <div class="sprow"><span>Volume</span><span id="soundPct">60%</span></div>
+              <input id="soundVol" type="range" min="0" max="100" value="60" aria-label="Volume" />
+              <button class="mutebtn" id="soundMute">Mute</button>
+            </div>
+          </div>
+          <button id="topup">+ Funds</button>
+          <div class="balance"><div class="label">Balance</div><div class="val" id="bal">—</div></div>
+        </div>
+      </header>
+
+      <div class="track" id="track">
+        <button class="drivers-toggle" id="driversToggle" aria-label="Toggle live drivers"><b>LIVE</b> ▸</button>
+        <button class="rh-toggle" id="rhToggle" aria-label="Toggle last rounds">LAST ◂</button>
+        <div class="lanes" id="lanes"></div>
+        <div class="startlights" id="startlights">
+          <div class="lpole">
+            <div class="lcol"><span class="bulb"></span><span class="bulb"></span></div>
+            <div class="lcol"><span class="bulb"></span><span class="bulb"></span></div>
+            <div class="lcol"><span class="bulb"></span><span class="bulb"></span></div>
+            <div class="lcol"><span class="bulb"></span><span class="bulb"></span></div>
+            <div class="lcol"><span class="bulb"></span><span class="bulb"></span></div>
+          </div>
+          <div class="gotext">GO!</div>
+        </div>
+        <div class="drivers" id="drivers">
+          <button class="drivers-close" id="driversClose" aria-label="Close live drivers">✕</button>
+          <h4><b>LIVE</b> DRIVERS</h4>
+          <div class="dhead"><span>#</span><span>Player</span><span>Color</span><span>Live</span></div>
+          <div id="driverList"></div>
+        </div>
+        <div class="nextrace"><span class="label">NEXT RACE</span> <span class="t" id="statusText">—</span></div>
+      </div>
+
+      <div class="verify" id="verify"></div>
+
+      <div class="carselect">
+        <span class="cslabel">Your Car</span>
+        <div class="carpick" id="carpick"></div>
+      </div>
+
+      <div class="controls">
+        <div class="bets">
+        <div class="panel betpanel">
+          <div class="ptitle">BET 1</div>
+          <div class="fld">
+            <div class="l"><span>Amount</span></div>
+            <div class="amtstep">
+              <button class="sbtn" data-amt="dec" data-slot="1">−</button>
+              <div class="amount"><span class="cur">$</span><input class="in" id="stake1" type="number" min="1" value="10" inputmode="decimal" /></div>
+              <button class="sbtn" data-amt="inc" data-slot="1">+</button>
+            </div>
+            <div class="quickadd">
+              <button data-add="1" data-slot="1">+1</button><button data-add="5" data-slot="1">+5</button>
+              <button data-add="10" data-slot="1">+10</button><button data-add="25" data-slot="1">+25</button>
+            </div>
+          </div>
+          <div class="fld">
+            <div class="l"><span>Auto Cash-out</span>
+              <label class="switch"><input type="checkbox" id="actog1"><span class="sw"></span></label></div>
+            <div class="numfld off" id="acnum1"><span class="pre">x</span><input class="in" type="number" id="acval1" min="1.1" step="0.1" value="2.0" inputmode="decimal" /></div>
+          </div>
+          <div class="fld">
+            <div class="l"><span>Auto Bet</span>
+              <label class="switch"><input type="checkbox" id="abtog1"><span class="sw"></span></label></div>
+            <div class="numfld off" id="abnum1"><input class="in" type="number" id="abval1" min="1" step="1" value="10" inputmode="numeric" /><span class="suf">rounds</span></div>
+          </div>
+          <button class="cashbtn" id="action1" data-slot="1">PLACE BET</button>
+        </div>
+        <div class="panel betpanel">
+          <div class="ptitle">BET 2</div>
+          <div class="fld">
+            <div class="l"><span>Amount</span></div>
+            <div class="amtstep">
+              <button class="sbtn" data-amt="dec" data-slot="2">−</button>
+              <div class="amount"><span class="cur">$</span><input class="in" id="stake2" type="number" min="1" value="10" inputmode="decimal" /></div>
+              <button class="sbtn" data-amt="inc" data-slot="2">+</button>
+            </div>
+            <div class="quickadd">
+              <button data-add="1" data-slot="2">+1</button><button data-add="5" data-slot="2">+5</button>
+              <button data-add="10" data-slot="2">+10</button><button data-add="25" data-slot="2">+25</button>
+            </div>
+          </div>
+          <div class="fld">
+            <div class="l"><span>Auto Cash-out</span>
+              <label class="switch"><input type="checkbox" id="actog2"><span class="sw"></span></label></div>
+            <div class="numfld off" id="acnum2"><span class="pre">x</span><input class="in" type="number" id="acval2" min="1.1" step="0.1" value="2.0" inputmode="decimal" /></div>
+          </div>
+          <div class="fld">
+            <div class="l"><span>Auto Bet</span>
+              <label class="switch"><input type="checkbox" id="abtog2"><span class="sw"></span></label></div>
+            <div class="numfld off" id="abnum2"><input class="in" type="number" id="abval2" min="1" step="1" value="10" inputmode="numeric" /><span class="suf">rounds</span></div>
+          </div>
+          <button class="cashbtn" id="action2" data-slot="2">PLACE BET</button>
+        </div>
+        </div>
+        <div class="panel chatpanel">
+          <div class="chathead"><span>LIVE CHAT</span><span class="dots">•••</span></div>
+          <div class="chatlog" id="chatlog"></div>
+          <div class="chatin"><input id="chatinput" maxlength="200" placeholder="Type a message…" /><button id="chatsend">➤</button></div>
+        </div>
+      </div>
+    </div>
+    <div class="toast" id="toast"></div>
+
+    <script type="module">
+      import { GameClient, verifyRound } from "./dist/index.js";
+      import { demoSocket } from "./demo-server.js";
+
+      const COLORS = { red: "var(--red)", blue: "var(--blue)", yellow: "var(--yellow)" };
+      const ASSET = { red: "assets/car-red.png", blue: "assets/car-blue.png", yellow: "assets/car-yellow.png" };
+      // cars with spinning-wheel frames: cycle these images while racing (speed-driven).
+      // NB filenames are case-sensitive in production (Linux): red-/blue- lowercase, Yellow- capitalized.
+      const CAR_FRAMES = {
+        red: [1, 2, 3, 4].map((n) => `assets/red-carframe-${n}.png`),
+        blue: [1, 2, 3, 4].map((n) => `assets/blue-carframe-${n}.png`),
+        yellow: [1, 2, 3, 4].map((n) => `assets/Yellow-carframe-${n}.png`),
+      };
+      const wheelFrame = {};
+      const $ = (id) => document.getElementById(id);
+      const cap = (s) => s[0].toUpperCase() + s.slice(1);
+
+      // ---------- sound (Web Audio: master gain = volume/mute, low-latency one-shots + loops) ----------
+      const Sound = (() => {
+        const FILES = {
+          click: "assets/sfx/click.mp3", bet: "assets/sfx/betConf.mp3", overtake: "assets/sfx/overtake.mp3",
+          rev: "assets/sfx/rev.mp3", ready1: "assets/sfx/ready1.mp3", ready2: "assets/sfx/ready2.mp3",
+          ready3: "assets/sfx/ready3.mp3", engine: "assets/sfx/enginerace.mp3", music: "assets/sfx/synth.mp3",
+        };
+        let ctx, master, ready = false, initP = null;
+        const buf = {}, loops = {};
+        let enabled = localStorage.getItem("rr-sound") !== "off";
+        let vol = Math.min(1, Math.max(0, parseFloat(localStorage.getItem("rr-vol") ?? "0.6")));
+        const applyMaster = () => { if (master) master.gain.value = enabled ? vol : 0; };
+        function init() { // cached: concurrent callers await the same load
+          if (initP) { resume(); return initP; }
+          initP = (async () => {
+            try {
+              ctx = new (window.AudioContext || window.webkitAudioContext)();
+              master = ctx.createGain(); applyMaster(); master.connect(ctx.destination);
+              await Promise.all(Object.entries(FILES).map(async ([k, u]) => {
+                try { buf[k] = await ctx.decodeAudioData(await (await fetch(u)).arrayBuffer()); } catch {}
+              }));
+              ready = true;
+            } catch {}
+          })();
+          return initP;
+        }
+        const resume = () => { if (ctx && ctx.state === "suspended") ctx.resume(); };
+        function play(name, { volume = 1, rate = 1 } = {}) {
+          if (!ready || !enabled || !buf[name]) return;
+          const s = ctx.createBufferSource(); s.buffer = buf[name]; s.playbackRate.value = rate;
+          const g = ctx.createGain(); g.gain.value = volume; s.connect(g); g.connect(master); s.start();
+        }
+        function startLoop(name, volume = 1) {
+          if (!ready || loops[name] || !buf[name]) return;
+          const s = ctx.createBufferSource(); s.buffer = buf[name]; s.loop = true;
+          const g = ctx.createGain(); g.gain.value = volume; s.connect(g); g.connect(master); s.start();
+          loops[name] = { s, g };
+        }
+        const stopLoop = (name) => { const l = loops[name]; if (l) { try { l.s.stop(); } catch {} delete loops[name]; } };
+        const loopRate = (name, r) => { const l = loops[name]; if (l) l.s.playbackRate.value = r; };
+        return {
+          init, resume, play, startLoop, stopLoop, loopRate,
+          setVolume(v) { vol = Math.min(1, Math.max(0, v)); localStorage.setItem("rr-vol", String(vol)); applyMaster(); },
+          setEnabled(on) { enabled = on; localStorage.setItem("rr-sound", on ? "on" : "off"); applyMaster(); },
+          get enabled() { return enabled; }, get volume() { return vol; }, get on() { return enabled && vol > 0; },
+        };
+      })();
+      const sfx = (n, o) => Sound.play(n, o);
+
+      const params = new URLSearchParams(location.search);
+      let account = params.get("account");
+      if (!account) { account = localStorage.getItem("rr-account") || ("racer" + Math.floor(1000 + Math.random() * 9000)); localStorage.setItem("rr-account", account); }
+      // OFFLINE DEMO: the round loop runs in-browser (no backend). See demo-server.js.
+      const client = new GameClient(demoSocket(account));
+      const myMask = account.length <= 3 ? account[0] + "**" : account.slice(0, 3) + "***";
+
+      const shown = {}, speed = {}, frozenP = {}, frozenV = {}, frozenDir = {}, lastP = {}; let target = {}, lastState = null, lastShift = 0;
+      const spin = {}, spinTarget = {}, wasDead = {}; let camShake = 0; // car-liveness state
+      let lastLeaderId = null; // for the overtake sound cue
+      const autoCashOn = { 1: false, 2: false };  // auto cash-out toggle per slot
+      const autoCashMult = { 1: 2.0, 2: 2.0 };    // typed cash-out multiplier
+      const autoBetOn = { 1: false, 2: false };   // auto-bet toggle per slot
+      const autoBetLeft = { 1: 0, 2: 0 };         // remaining auto-bet rounds while running
+      let pickersFor = "";
+      const history = {}; const recordedRounds = new Set(); let historyFor = ""; const HMAX = 10; // last N rounds per car
+      const trackEl = $("track"); let bgScroll = 0; const BG_RATIO = 3168 / 1344;
+      // camera follows the leader; track distance ∝ ln(multiplier). A crashed car's
+      // distance freezes, so as the field pulls ahead it falls behind and slides off the left.
+      const START = 26, KDIST = 40, ANCHOR = 70; // start just right of the LIVE DRIVERS panel (trailing x-number stays clear)
+      const distOf = (m) => START + KDIST * Math.log(Math.max(1, m));
+
+      function toast(m) { const t = $("toast"); t.textContent = m; t.classList.add("show"); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove("show"), 1800); }
+
+      // ---------- COSMETIC BOTS (client-only; never touch money/RTP) ----------
+      const BOT_NAMES = ["Samaz", "Saran36", "Kotefraa", "Skate", "RophtiD", "Romaniirex", "swinhatt", "NeoDrift", "VortX", "Lap_King", "Mr.Boost", "Zephyr",
+        "Nitro_Sam", "DriftKid", "ApexHunt", "RedShift", "TurboG", "GridLock", "PitViper", "FastLane", "Octane", "Slipstrm", "BoostJr", "Maverik", "Pole_Pos", "Vroomz"];
+      let bots = [];
+      function spawnBots(carIds) {
+        const n = 16 + Math.floor(Math.random() * 5); // 16..20 bots
+        const pool = [...BOT_NAMES].sort(() => Math.random() - 0.5);
+        bots = pool.slice(0, n).map((name) => ({
+          name, carId: carIds[Math.floor(Math.random() * carIds.length)],
+          target: +(1.2 + Math.random() * 4).toFixed(2), status: "active", mult: 1,
+        }));
+      }
+      function updateBots(cars) {
+        for (const b of bots) {
+          const car = cars.find((c) => c.id === b.carId); if (!car) continue;
+          const m = shown[b.carId] ?? car.multiplier ?? 1;
+          if (b.status !== "active") continue;
+          if (car.brokenDown && m < b.target) { b.status = "lost"; }
+          else if (m >= b.target) { b.status = "cashed"; b.mult = b.target; }
+          else b.mult = m;
+        }
+      }
+
+      // ---------- track build ----------
+      let builtFor = "";
+      function buildTrack(carIds) {
+        if (builtFor === carIds.join()) return;
+        builtFor = carIds.join();
+        const lanes = $("lanes"); lanes.innerHTML = "";
+        carIds.forEach((id) => {
+          const lane = document.createElement("div");
+          lane.className = `lane ${id}`; lane.id = `lane-${id}`; lane.style.color = COLORS[id];
+          // all wheel frames preloaded as stacked imgs; we toggle which is visible (no per-frame src swap = no decode stutter)
+          const wheels = CAR_FRAMES[id]
+            ? `<div class="wheels" id="wheels-${id}">` + CAR_FRAMES[id].map((src, i) => `<img src="${src}" alt=""${i === 0 ? ' class="on"' : ''} />`).join("") + `</div>`
+            : "";
+          lane.innerHTML = `<div class="mult" id="mult-${id}">x1.00</div><div class="trail" id="trail-${id}"></div><div class="shadow" id="shadow-${id}"></div>`
+            + `<div class="carwrap" id="carwrap-${id}">`
+            +   `<div class="exhaust"></div>`
+            +   `<img class="car" id="car-${id}" src="${ASSET[id]}" alt="${id}" />`
+            +   wheels
+            + `</div>`;
+          lane.onclick = () => { if (lastState && lastState.phase === "betting") chooseCar(id); }; // only before the race; respects bet lock
+          lanes.appendChild(lane); shown[id] = 1; speed[id] = 0;
+        });
+      }
+      // The engine requires every bet in a round to be on ONE car and there's no
+      // cancel — so once a bet is placed this round, the car is locked to it.
+      function lockedCar() {
+        const s = lastState; if (!s) return null;
+        const bet = Object.values(s.myBets || {}).find((b) => b);
+        return bet ? bet.carId : null;
+      }
+      function chooseCar(id) {
+        const lock = lockedCar();
+        if (lock && lock !== id) { toast(`Bet locked to ${cap(lock)} this round`); return; }
+        sfx("click"); client.selectCar(id); refreshCarPick();
+      }
+      function buildCarPickers(carIds) {
+        if (pickersFor === carIds.join()) return;
+        pickersFor = carIds.join();
+        const wrap = $("carpick"); if (!wrap) return;
+        wrap.innerHTML = "";
+        carIds.forEach((id) => {
+          const chip = document.createElement("button");
+          chip.type = "button"; chip.className = `carchip ${id}`; chip.dataset.car = id;
+          chip.innerHTML = `<span class="dot"></span>${cap(id)}`;
+          chip.onclick = () => chooseCar(id);
+          wrap.appendChild(chip);
+        });
+      }
+      // a single shared picker — highlight the active car; locked to a placed bet, and outside betting
+      function refreshCarPick() {
+        const s = lastState; if (!s) return;
+        const wrap = $("carpick"); if (!wrap) return;
+        const lock = lockedCar();
+        if (lock && s.selectedCar !== lock) {
+          // a bet is placed — snap selection (and the lane highlight) to its car. Plain
+          // assignment, no emit, to avoid re-entrancy inside the render/animation loop.
+          s.selectedCar = lock;
+          s.carIds.forEach((id) => $(`lane-${id}`)?.classList.toggle("sel", id === lock));
+        }
+        const active = lock ?? s.selectedCar;
+        for (const chip of wrap.children) {
+          chip.classList.toggle("on", chip.dataset.car === active);
+          chip.disabled = s.phase !== "betting" || (lock != null && chip.dataset.car !== lock);
+        }
+      }
+      // ---- round-history bars (top-left, one row per car) ----------------------
+      function buildHistory(carIds) {
+        if (historyFor === carIds.join()) return;
+        historyFor = carIds.join();
+        const wrap = $("rhistory"); wrap.innerHTML = `<button class="rh-close" id="rhClose" aria-label="Close last rounds">✕</button><div class="rhtitle">Last Rounds</div>`;
+        $("rhClose").onclick = () => { wrap.classList.remove("open"); $("rhToggle").style.display = ""; $("soundctl").classList.remove("shift"); };
+        carIds.forEach((id) => {
+          history[id] ||= [];
+          const row = document.createElement("div");
+          row.className = `rhrow ${id}`; row.style.color = COLORS[id] || "var(--ink)";
+          row.innerHTML = `<div class="chips" id="rh-${id}"></div>`;
+          wrap.appendChild(row);
+        });
+        renderHistory(carIds);
+      }
+      function renderHistory(carIds) {
+        carIds.forEach((id) => {
+          const c = $(`rh-${id}`); if (!c) return;
+          const arr = history[id] || []; let html = "";
+          for (let i = 0; i < HMAX; i++) {
+            const v = arr[i];
+            html += v == null ? `<span class="rhchip empty">—</span>` : `<span class="rhchip${v >= 2 ? " hi" : ""}">x${v.toFixed(2)}</span>`;
+          }
+          c.innerHTML = html;
+        });
+      }
+      // record each car's crash multiplier once per settled round (newest first)
+      function recordHistory(s) {
+        if (!s.settled || !s.roundId || recordedRounds.has(s.roundId)) return;
+        recordedRounds.add(s.roundId);
+        for (const c of s.settled.cars) {
+          if (c.crashPoint == null) continue;
+          (history[c.id] ||= []).unshift(c.crashPoint);
+          if (history[c.id].length > HMAX) history[c.id].length = HMAX;
+        }
+        renderHistory(s.carIds);
+      }
+      function render(s) {
+        lastState = s;
+        buildTrack(s.carIds);
+        buildCarPickers(s.carIds);
+        buildHistory(s.carIds);
+        recordHistory(s);
+        target = Object.fromEntries(s.cars.map((c) => [c.id, c.multiplier]));
+        $("bal").textContent = "$" + s.balance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        s.carIds.forEach((id) => $(`lane-${id}`)?.classList.toggle("sel", id === s.selectedCar));
+        $("lanes").classList.toggle("locked", s.phase !== "betting"); // car pick only before the race
+        s.cars.forEach((c) => {
+          const carEl = $(`car-${c.id}`), mEl = $(`mult-${c.id}`); if (!carEl) return;
+          carEl.classList.toggle("dead", c.brokenDown); mEl.classList.toggle("dead", c.brokenDown);
+        });
+        if (s._fresh) { spawnBots(s.carIds); s._fresh = false; }
+        renderDrivers(s); renderActions(s);
+        if (s.settled) showVerify(s); else $("verify").textContent = "";
+      }
+
+      function renderDrivers(s) {
+        const rows = [];
+        for (const d of s.drivers) for (const b of d.bets)
+          rows.push({ name: d.player === myMask ? "[YOU]" : d.player, you: d.player === myMask, carId: d.carId, status: b.status, mult: b.multiplier, live: shown[d.carId] ?? 1 });
+        for (const b of bots) rows.push({ name: b.name, you: false, carId: b.carId, status: b.status, mult: b.mult, live: shown[b.carId] ?? 1 });
+        const val = (r) => r.status === "lost" ? -1 : (r.status === "cashed" ? r.mult : r.live);
+        rows.sort((a, z) => val(z) - val(a));
+        const list = $("driverList"); list.innerHTML = "";
+        rows.slice(0, 20).forEach((r, i) => {
+          const mx = r.status === "cashed" ? `x${(r.mult || 0).toFixed(2)}` : r.status === "lost" ? "OUT" : `x${(r.live || 1).toFixed(2)}`;
+          const cls = r.status === "cashed" ? "cashed" : r.status === "lost" ? "lost" : r.carId;
+          const row = document.createElement("div"); row.className = "drow" + (r.you ? " you" : "");
+          row.innerHTML = `<span class="rk">${i + 1}</span><span class="who">${r.name}</span><span class="col ${r.carId}">${cap(r.carId)}</span><span class="mx ${cls}">${mx}</span>`;
+          list.appendChild(row);
+        });
+        if (!list.children.length) list.innerHTML = `<div class="drow" style="color:var(--dim);border:none">No bets yet…</div>`;
+      }
+
+      // only rewrite a button's DOM when its mode changes — otherwise a click landing
+      // mid-frame (between mousedown/up) gets dropped when innerHTML is rebuilt.
+      function setBtn(btn, mode, cls, disabled, text, html) {
+        if (btn.dataset.mode === mode) return;
+        btn.dataset.mode = mode; btn.className = cls; btn.disabled = disabled;
+        if (html != null) btn.innerHTML = html; else btn.textContent = text;
+      }
+      function renderActions(s) {
+        for (const slot of [1, 2]) {
+          const btn = $(`action${slot}`), bet = s.myBets[slot], betting = s.phase === "betting";
+          if (!bet) {
+            setBtn(btn, betting ? "place" : "wait", betting ? "cashbtn" : "cashbtn waiting", !betting, betting ? "PLACE BET" : "WAITING");
+          } else if (bet.status === "active") {
+            if (s.phase === "racing") {
+              if (btn.dataset.mode !== "cash") { btn.dataset.mode = "cash"; btn.className = "cashbtn"; btn.disabled = false; btn.innerHTML = `<span class="cap"></span><span class="amt"></span>`; }
+              const m = shown[bet.carId] || 1;
+              btn.querySelector(".cap").textContent = `CASH OUT · ${cap(bet.carId)}`;
+              btn.querySelector(".amt").textContent = `$${(bet.stake * m).toFixed(2)}`;
+            } else {
+              setBtn(btn, "on", "cashbtn waiting", true, null, `ON ${bet.carId.toUpperCase()}<span class="sub">${bet.autoCashout ? "auto x" + bet.autoCashout : "manual"} · $${bet.stake}</span>`);
+            }
+          } else if (bet.status === "cashed") {
+            setBtn(btn, `won${bet.multiplier}/${bet.payout}`, "cashbtn won", true, null, `<span class="cap">WON · x${(bet.multiplier || 0).toFixed(2)}</span><span class="amt">+$${(bet.payout || 0).toFixed(2)}</span>`);
+          } else {
+            setBtn(btn, "lost", "cashbtn lost", true, "LOST");
+          }
+        }
+        refreshCarPick();
+      }
+
+      async function showVerify(s) {
+        const v = $("verify"); v.innerHTML = "Verifying provably-fair result…";
+        try {
+          const res = await verifyRound({ serverSeed: s.settled.serverSeed, serverSeedHash: s.serverSeedHash, clientSeed: "redline-house", nonce: s.nonce, cars: s.settled.cars.map((c) => ({ id: c.id, crashPoint: c.crashPoint })) });
+          const pts = s.settled.cars.map((c) => `${cap(c.id)} x${c.crashPoint.toFixed(2)}`).join(" · ");
+          v.innerHTML = res.ok ? `✔ <b class="ok">Provably fair</b> — ${pts}` : `✘ <b class="bad">MISMATCH</b> — ${res.reason}`;
+        } catch (e) { v.textContent = "verify error: " + e.message; }
+      }
+
+      // ---------- start lights (F1-style countdown before the race) ----------
+      let lightsMode = "idle"; let goTimer = 0; let lastLit = 0; // idle | counting | go
+      const READY = ["ready1", "ready1", "ready2", "ready2", "ready3"]; // per light 1..5
+      function updateLights(phase, left) {
+        const el = $("startlights");
+        if (phase === "betting") {
+          if (left <= 5) { // last 5s: red lights build up one column per second, all lit at 0
+            el.classList.add("show"); el.classList.remove("go");
+            const lit = Math.min(5, Math.max(1, 6 - left)); // 5s→1 … 1s→5, 0s→5
+            el.querySelectorAll(".lcol").forEach((c, i) => c.classList.toggle("on", i < lit));
+            if (lit > lastLit) sfx(READY[Math.min(lit, READY.length) - 1], { volume: 0.7 }); // ready1,ready1,ready2,ready2,ready3
+            lastLit = lit; lightsMode = "counting";
+          } else if (lightsMode !== "go") { el.classList.remove("show", "go"); lightsMode = "idle"; lastLit = 0; }
+        } else if (phase === "racing") {
+          if (lightsMode === "counting") { // lights out → GO!
+            lightsMode = "go"; lastLit = 0; el.querySelectorAll(".lcol").forEach((c) => c.classList.remove("on")); el.classList.add("go");
+            Sound.startLoop("engine", 0.4); // engines launch straight into the race loop
+            clearTimeout(goTimer); goTimer = setTimeout(() => { el.classList.remove("show", "go"); lightsMode = "idle"; }, 900);
+          }
+        } else if (lightsMode !== "go") { el.classList.remove("show", "go"); lightsMode = "idle"; lastLit = 0; }
+      }
+
+      // ---------- animation loop ----------
+      let lastT = 0;
+      function frame(t) {
+        const dt = lastT ? Math.min(60, t - lastT) : 16; lastT = t;
+        const s = lastState;
+        if (s) {
+          // pass 1: smooth multipliers; the camera follows the leading ALIVE car only
+          let lead = 1, leaderAlive = -1e9, leaderId = null; const raw = {};
+          for (const id of s.carIds) {
+            const tgt = target[id] ?? 1, prev = shown[id] ?? 1;
+            // dt-aware exponential smoothing (time constant ~ one server tick) -> continuous motion
+            const next = prev + (tgt - prev) * (1 - Math.exp(-dt / 120));
+            const d16 = Math.max(0, next - prev) * 16 / Math.max(dt, 1); // delta normalised to a 16ms frame
+            speed[id] = speed[id] * 0.85 + d16 * 0.15; shown[id] = next;
+            raw[id] = distOf(next);
+            const dead = s.cars.find((c) => c.id === id)?.brokenDown;
+            if (!dead) { if (raw[id] > leaderAlive) { leaderAlive = raw[id]; leaderId = id; } if (next > lead) lead = next; }
+          }
+          // overtake sound when the leader changes mid-race
+          if (s.phase === "racing" && leaderId && leaderId !== lastLeaderId && lastLeaderId !== null) sfx("overtake", { volume: 0.8 });
+          if (s.phase === "racing") lastLeaderId = leaderId; else lastLeaderId = null;
+          // camera holds the leading alive car at ANCHOR; frozen when everyone has crashed.
+          // While the leader advances we track it exactly; when the target drops (the leader
+          // crashed and a car further back becomes the new leader) we EASE to it instead of
+          // snapping, so the field doesn't teleport forward in a single frame.
+          const targetShift = leaderAlive > -1e9 ? Math.max(0, leaderAlive - ANCHOR) : lastShift;
+          const shift = targetShift >= lastShift
+            ? targetShift
+            : lastShift + (targetShift - lastShift) * (1 - Math.exp(-dt / 220));
+          lastShift = shift;
+          const racing = s.phase === "racing";
+          for (const id of s.carIds) {
+            const next = shown[id];
+            const dead = s.cars.find((c) => c.id === id)?.brokenDown;
+            const car = $(`car-${id}`), wrap = $(`carwrap-${id}`), mEl = $(`mult-${id}`), tr = $(`trail-${id}`);
+            if (!car || !wrap) continue;
+            let p;
+            if (dead) {
+              if (frozenP[id] == null) {
+                frozenP[id] = lastP[id] != null ? lastP[id] : raw[id] - shift; frozenV[id] = 2.5;
+                // LAST survivor (no one else alive at crash) surges FORWARD; earlier crashes fall back
+                frozenDir[id] = s.cars.some((c) => !c.brokenDown) ? -1 : 1;
+                // pick a spin-out: losers slew sideways, the winner stays straight
+                spinTarget[id] = frozenDir[id] > 0 ? 0 : (Math.random() < 0.5 ? -1 : 1) * (110 + Math.random() * 120);
+              }
+              frozenV[id] += (frozenDir[id] > 0 ? 1.1 : 0.55) * dt / 16; // winner accelerates harder
+              frozenP[id] += frozenDir[id] * frozenV[id] * dt / 16;
+              p = frozenP[id];
+              car.classList.toggle("winner", frozenDir[id] > 0);
+            } else {
+              frozenP[id] = null; frozenV[id] = 0; spin[id] = 0; spinTarget[id] = null; car.classList.remove("winner");
+              p = raw[id] - shift; // alive: relative to the camera
+            }
+            lastP[id] = p;
+
+            // ---- liveness ----------------------------------------------------
+            const sp = Math.min(1, (speed[id] || 0) * 26); // 0..1 normalised speed (drives the exhaust glow)
+            // only crashed cars rotate (spin-out); alive cars stay flat — no wobble/squash
+            let rot = 0;
+            if (dead) {
+              spin[id] = (spin[id] || 0) + ((spinTarget[id] || 0) - (spin[id] || 0)) * (1 - Math.exp(-dt / 170));
+              rot = spin[id];
+            }
+            wrap.style.left = p + "%";
+            wrap.style.transform = `translate(-50%,-50%) rotate(${rot.toFixed(2)}deg)`;
+            // spinning wheels: cycle the overlay frames while racing (faster with speed), rest on frame 0
+            const frames = CAR_FRAMES[id], wheelsEl = $(`wheels-${id}`);
+            if (frames && wheelsEl) {
+              let idx = 0;
+              // every alive racing car keeps a visible minimum spin; faster cars spin quicker
+              if (racing && !dead) { wheelFrame[id] = (wheelFrame[id] || 0) + (0.9 + sp * 4) * dt / 16; idx = Math.floor(wheelFrame[id]) % frames.length; }
+              if (wheelsEl._fi !== idx) {
+                const kids = wheelsEl.children, prev = wheelsEl._fi || 0;
+                if (kids[prev]) kids[prev].classList.remove("on");
+                if (kids[idx]) kids[idx].classList.add("on");
+                wheelsEl._fi = idx;
+              }
+            }
+            // neon exhaust glow: brighter and stretched further back the faster you go
+            const ex = wrap.firstElementChild;
+            if (ex && ex.classList.contains("exhaust")) {
+              ex.style.opacity = (racing && !dead ? (0.25 + sp * 1.0) : 0).toFixed(2);
+              ex.style.transform = `translate(-50%,-50%) scale(${(1 + sp * 1.1).toFixed(2)}, ${(1 + sp * 0.25).toFixed(2)})`;
+            }
+            // camera kick on a fresh crash; the LAST car standing (winner) gets the overtake cue
+            if (dead && !wasDead[id]) {
+              camShake = Math.max(camShake, 7);
+              if (frozenDir[id] > 0) sfx("overtake", { volume: 0.9 });
+            }
+            wasDead[id] = dead;
+
+            const sh = $(`shadow-${id}`);
+            if (sh) { sh.style.left = p + "%"; sh.style.width = (car.offsetWidth * 0.72) + "px"; sh.style.height = (car.offsetHeight * 0.16) + "px"; sh.style.opacity = dead ? 0.22 : 0.55; }
+            // alive: number rides the car's tail; crashed: parks at the left edge of the YOUR CAR glow (right of LIVE DRIVERS)
+            if (mEl) {
+              mEl.style.display = "";
+              if (dead) { mEl.classList.add("parked"); mEl.style.left = ""; }
+              else { mEl.classList.remove("parked"); mEl.style.left = (p - 9) + "%"; }
+              mEl.textContent = "x" + next.toFixed(2);
+            }
+            if (tr) {
+              const racing = s.phase === "racing";
+              const boosting = !dead || frozenDir[id] > 0; // winner keeps a speed streak as it bolts away
+              const W = (racing && boosting) ? (dead ? 520 : Math.min(540, 220 + speed[id] * 7800)) : 0;
+              tr.style.width = W + "px"; tr.style.left = `calc(${p}% - ${W}px)`;
+              tr.style.opacity = (racing && boosting) ? Math.min(1, dead ? .95 : .7 + speed[id] * 95) : 0;
+            }
+          }
+          // camera kick: shake the lanes briefly after a crash, then settle
+          const lanesEl = $("lanes");
+          if (camShake > 0.25) {
+            lanesEl.style.transform = `translate(${((Math.random() - 0.5) * camShake).toFixed(1)}px, ${((Math.random() - 0.5) * camShake).toFixed(1)}px)`;
+            camShake *= Math.pow(0.86, dt / 16);
+          } else if (lanesEl.style.transform) { lanesEl.style.transform = ""; camShake = 0; }
+          const leadEl = $("lead");
+          leadEl.textContent = "x" + lead.toFixed(2);
+          leadEl.style.color = (leaderId && lead > 1.0001) ? COLORS[leaderId] : "var(--orange2)"; // tint to the leading car
+          // infinite leftward background scroll while racing (speed tracks the leader)
+          if (s.phase === "racing") {
+            let mx = 0; for (const id of s.carIds) mx = Math.max(mx, speed[id] || 0);
+            bgScroll -= (18 + Math.min(70, mx * 1500)) * dt / 16;
+            const tileW = (trackEl.clientHeight || 1) * BG_RATIO;
+            if (bgScroll <= -tileW) bgScroll += tileW;
+            trackEl.style.backgroundPositionX = bgScroll.toFixed(1) + "px";
+          } else if (s.phase === "betting") { bgScroll = 0; trackEl.style.backgroundPositionX = "0px"; }
+          updateBots(s.cars);
+          const st = $("statusText");
+          if (s.phase === "betting") { const left = Math.max(0, Math.ceil((s.bettingEndsAt - Date.now()) / 1000)); st.textContent = `00:${String(left).padStart(2, "0")}`; updateLights("betting", left); Sound.stopLoop("engine"); }
+          else if (s.phase === "racing") { st.textContent = "LIVE"; updateLights("racing"); Sound.startLoop("engine", 0.4); Sound.loopRate("engine", 1 + Math.min(0.6, (lead - 1) / 12)); }
+          else { st.textContent = "STARTING"; updateLights("other"); Sound.stopLoop("engine"); }
+          renderActions(s);
+          if (s.phase === "racing") renderDrivers(s); // live bot/player multipliers
+        }
+        requestAnimationFrame(frame);
+      }
+      requestAnimationFrame(frame);
+
+      // ---------- wiring ----------
+      let lastRoundId = "";
+      client.onUpdate((s) => {
+        if (s.roundId && s.roundId !== lastRoundId) {
+          lastRoundId = s.roundId; s._fresh = true; lastShift = 0;
+          for (const id of s.carIds) { shown[id] = 1; speed[id] = 0; frozenP[id] = null; frozenV[id] = 0; spin[id] = 0; spinTarget[id] = null; wasDead[id] = false; } // hard reset to the start line
+          camShake = 0;
+          scheduleAutoBet(s); // auto-bet fires near the END of betting, so players can still switch car
+        }
+        render(s);
+      });
+      // Auto-bet places near the END of the betting window (not at round-open), so the
+      // player keeps the whole window to switch car — the bet uses the car selected then.
+      const AUTO_BET_LEAD_MS = 1500; // place this long before the race starts
+      let autoBetTimer = 0;
+      function scheduleAutoBet(s) {
+        clearTimeout(autoBetTimer);
+        if (!autoBetOn[1] && !autoBetOn[2]) return;
+        const delay = Math.max(0, (s.bettingEndsAt - Date.now()) - AUTO_BET_LEAD_MS);
+        const roundId = s.roundId;
+        autoBetTimer = setTimeout(() => {
+          if (lastState && lastState.roundId === roundId && lastState.phase === "betting") maybeAutoBet(lastState);
+        }, delay);
+      }
+      // place the bet automatically each new betting round while auto-bet rounds remain
+      function maybeAutoBet(s) {
+        if (s.phase !== "betting") return;
+        for (const slot of [1, 2]) {
+          if (autoBetOn[slot] && autoBetLeft[slot] > 0 && !s.myBets[slot]) {
+            const stake = getStake(slot);
+            if (Number.isFinite(stake) && stake > 0) {
+              sfx("bet");
+              client.placeBet(slot, stake, autoCashOn[slot] ? autoCashMult[slot] : undefined);
+              autoBetLeft[slot] -= 1;
+              if (autoBetLeft[slot] === 0) { autoBetOn[slot] = false; $(`abtog${slot}`).checked = false; refreshAuto(slot); }
+            }
+          }
+        }
+      }
+      client.onUpdate((s) => { if (s.error) { toast(s.error); s.error = undefined; } });
+      // win sound on cash-out confirmation (covers both manual and auto cash-out, once each)
+      const betSeen = { 1: null, 2: null };
+      client.onUpdate((s) => {
+        for (const slot of [1, 2]) {
+          const st = s.myBets[slot] ? s.myBets[slot].status : null;
+          if (st === "cashed" && betSeen[slot] !== "cashed") sfx("bet", { volume: 1 });
+          betSeen[slot] = st;
+        }
+      });
+      client.onChat((m) => addChat(m.player, m.text, m.player === myMask));
+
+      function addChat(who, text, me) { const log = $("chatlog"); const d = document.createElement("div"); d.className = "c" + (me ? " me" : ""); d.innerHTML = `<b>${escapeHtml(who)}:</b> ${escapeHtml(text)}`; log.appendChild(d); while (log.children.length > 40) log.firstChild.remove(); log.scrollTop = log.scrollHeight; }
+      function sys(t) { const log = $("chatlog"); const d = document.createElement("div"); d.className = "sys"; d.textContent = t; log.appendChild(d); }
+
+      // cosmetic chatter
+      const CHATTER = ["go go go!", "cash out now!", "red is flying 🔥", "hold blue", "nice one", "rip", "wen x10", "easy money", "yellow gonna pop", "let it ride", "gg", "crowd goes wild"];
+      setInterval(() => { if (Math.random() < 0.6 && bots.length) { const b = bots[Math.floor(Math.random() * bots.length)]; addChat(b.name, CHATTER[Math.floor(Math.random() * CHATTER.length)], false); } }, 3500);
+
+      for (const slot of [1, 2]) $(`action${slot}`).onpointerdown = (e) => {
+        if (e.button != null && e.button !== 0) return; // left/primary only
+        const s = lastState; if (!s) return; const bet = s.myBets[slot];
+        if (bet && bet.status === "active" && s.phase === "racing") client.cashOut(slot); // win sound fires on confirmation
+        else if (!bet && s.phase === "betting") { const stake = getStake(slot); if (!Number.isFinite(stake) || stake <= 0) return toast("Enter a stake"); sfx("bet"); client.placeBet(slot, stake, autoCashOn[slot] ? autoCashMult[slot] : undefined); }
+      };
+      // --- stake amount: stepper, quick-add chips ---
+      const getStake = (slot) => parseFloat($(`stake${slot}`).value) || 0;
+      const setStake = (slot, v) => { $(`stake${slot}`).value = String(Math.max(1, Math.round(v * 100) / 100)); };
+      document.querySelectorAll("[data-amt]").forEach((b) => b.onclick = () => {
+        sfx("click"); const slot = b.dataset.slot; setStake(slot, getStake(slot) + (b.dataset.amt === "inc" ? 1 : -1));
+      });
+      document.querySelectorAll("[data-add]").forEach((b) => b.onclick = () => {
+        sfx("click"); setStake(b.dataset.slot, getStake(b.dataset.slot) + Number(b.dataset.add));
+      });
+      // --- auto cash-out & auto bet: toggle switches + typed values ---
+      const readCash = (slot) => { autoCashMult[slot] = Math.max(1.1, parseFloat($(`acval${slot}`).value) || 1.1); };
+      const readRounds = (slot) => Math.max(1, parseInt($(`abval${slot}`).value, 10) || 1);
+      function refreshAuto(slot) {
+        $(`acnum${slot}`).classList.toggle("off", !autoCashOn[slot]);
+        $(`abnum${slot}`).classList.toggle("off", !autoBetOn[slot]);
+      }
+      for (const slot of [1, 2]) {
+        $(`actog${slot}`).onchange = (e) => { sfx("click"); autoCashOn[slot] = e.target.checked; readCash(slot); refreshAuto(slot); };
+        $(`abtog${slot}`).onchange = (e) => { sfx("click"); autoBetOn[slot] = e.target.checked; autoBetLeft[slot] = e.target.checked ? readRounds(slot) : 0; refreshAuto(slot); if (lastState && lastState.phase === "betting") scheduleAutoBet(lastState); };
+        $(`acval${slot}`).oninput = () => readCash(slot);
+        $(`abval${slot}`).oninput = () => { if (autoBetOn[slot]) autoBetLeft[slot] = readRounds(slot); };
+      }
+      [1, 2].forEach(refreshAuto);
+      $("topup").onclick = () => { sfx("click"); client.topUp(); };
+
+      // ---- sound control (volume slider + mute) ----
+      function refreshSoundUI() {
+        $("soundBtn").textContent = Sound.on ? "🔊" : "🔇";
+        $("soundBtn").classList.toggle("off", !Sound.on);
+        $("soundVol").value = Math.round(Sound.volume * 100);
+        $("soundPct").textContent = Math.round(Sound.volume * 100) + "%";
+        $("soundMute").textContent = Sound.enabled ? "Mute" : "Unmute";
+        $("soundMute").classList.toggle("muted", !Sound.enabled);
+      }
+      $("soundBtn").onclick = () => { Sound.init(); $("soundPop").classList.toggle("open"); refreshSoundUI(); };
+      $("soundVol").oninput = (e) => { Sound.init(); Sound.setVolume(Number(e.target.value) / 100); refreshSoundUI(); };
+      $("soundMute").onclick = () => { Sound.init(); Sound.setEnabled(!Sound.enabled); if (Sound.enabled) Sound.startLoop("music", 0.35); refreshSoundUI(); };
+      document.addEventListener("click", (e) => { if (!$("soundctl").contains(e.target)) $("soundPop").classList.remove("open"); });
+      refreshSoundUI();
+      // unlock audio on the first user gesture (autoplay policy), then start ambient music
+      const armAudio = async () => { await Sound.init(); Sound.resume(); Sound.startLoop("music", 0.35); };
+      window.addEventListener("pointerdown", armAudio, { once: true });
+      window.addEventListener("keydown", armAudio, { once: true });
+
+      $("driversToggle").onclick = () => { sfx("click"); $("drivers").classList.add("open"); $("driversToggle").style.display = "none"; };
+      $("driversClose").onclick = () => { sfx("click"); $("drivers").classList.remove("open"); $("driversToggle").style.display = ""; };
+      $("rhToggle").onclick = () => { sfx("click"); $("rhistory").classList.add("open"); $("rhToggle").style.display = "none"; $("soundctl").classList.add("shift"); };
+      $("chatsend").onclick = () => { sfx("click"); sendChat(); };
+      $("chatinput").addEventListener("keydown", (e) => { if (e.key === "Enter") sendChat(); });
+      function sendChat() { const i = $("chatinput"), t = i.value.trim(); if (t) { client.chat(t); i.value = ""; } }
+      function escapeHtml(s) { return String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
+
+      sys(`Welcome, ${account}. Pick a car (click a lane), place up to 2 bets, cash out before it breaks down.`);
+
+      // ---------- loading splash: preload heavy art + wait for the first game state ----------
+      (function showLoader() {
+        const imgs = [
+          "assets/logo-redline-rush.png", "assets/bg-landscape2.png", "assets/tirewall.png",
+          "assets/car-red.png", "assets/car-blue.png", "assets/car-yellow.png",
+          ...Object.values(CAR_FRAMES).flat(),
+        ];
+        const total = imgs.length;
+        let loaded = 0, firstState = false, fontsReady = false, hidden = false;
+        const setBar = () => { const el = $("loaderFill"); if (el) el.style.width = Math.round((loaded / total) * 100) + "%"; };
+        const bump = () => { loaded++; setBar(); check(); };
+        imgs.forEach((src) => { const im = new Image(); im.onload = im.onerror = bump; im.src = src; });
+        client.onUpdate(() => { firstState = true; check(); });
+        if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { fontsReady = true; check(); });
+        else fontsReady = true;
+        function check() {
+          if (hidden) return;
+          if (loaded >= total && firstState && fontsReady) hide();
+        }
+        function hide() {
+          hidden = true;
+          const l = $("loader"); if (!l) return;
+          $("loaderText").textContent = "Ready";
+          $("loaderFill").style.width = "100%";
+          l.classList.add("hide");
+          setTimeout(() => l.remove(), 600);
+        }
+        setTimeout(() => { if (!hidden) hide(); }, 8000); // safety: never hang if the socket stalls
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Redline Rush — Game Sheet</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet" />
+    <style>
+      :root {
+        --bg:#0a0e1a; --panel:#141d33; --panel2:#0e1626; --line:rgba(120,150,220,.18);
+        --ink:#eef3ff; --dim:#8b97b8; --orange:#ff7a1a; --orange2:#ffb24d;
+        --red:#ff3142; --blue:#2f8bff; --yellow:#ffce33; --green:#25cf63;
+      }
+      * { box-sizing:border-box; }
+      body { margin:0; background:radial-gradient(ellipse at top, #0e1730 0%, #070b15 70%); color:var(--ink);
+        font-family:"Rajdhani",system-ui,sans-serif; font-size:16px; line-height:1.6; }
+      .wrap { max-width:920px; margin:0 auto; padding:32px 20px 80px; }
+      a { color:var(--orange2); }
+
+      /* hero */
+      .hero { text-align:center; padding:30px 16px 26px; border:1px solid var(--line); border-radius:18px;
+        background:linear-gradient(180deg, rgba(20,29,51,.7), rgba(10,16,30,.5)); position:relative; overflow:hidden; }
+      .hero::before { content:""; position:absolute; inset:0; background:
+        repeating-linear-gradient(90deg, transparent 0 38px, rgba(255,122,26,.05) 38px 40px); pointer-events:none; }
+      .hero img { width:min(74%,420px); filter:drop-shadow(0 0 26px rgba(255,122,26,.35)); }
+      .hero .sub { font-family:"Orbitron"; font-weight:700; letter-spacing:3px; font-size:13px; color:var(--dim);
+        text-transform:uppercase; margin-top:10px; }
+      .hero .quick { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-top:18px; }
+      .pill { font-family:"Orbitron"; font-weight:700; font-size:12px; letter-spacing:1px; text-transform:uppercase;
+        padding:6px 12px; border-radius:999px; border:1px solid var(--line); background:#0a1120; color:var(--ink); }
+      .pill b { color:var(--orange2); }
+
+      h2 { font-family:"Orbitron"; font-weight:800; font-size:20px; letter-spacing:1px; margin:38px 0 14px;
+        padding-bottom:8px; border-bottom:2px solid var(--line); display:flex; align-items:center; gap:10px; }
+      h2 .bar { width:14px; height:14px; border-radius:3px; background:linear-gradient(180deg,var(--orange2),var(--orange));
+        box-shadow:0 0 10px var(--orange); }
+      h3 { font-family:"Orbitron"; font-weight:700; font-size:15px; margin:0 0 4px; color:var(--orange2); }
+      p { margin:0 0 12px; color:#d6def3; }
+      .muted { color:var(--dim); }
+
+      /* specs grid */
+      .specs { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:12px; }
+      .spec { background:linear-gradient(180deg,var(--panel),var(--panel2)); border:1px solid var(--line);
+        border-radius:12px; padding:14px 16px; }
+      .spec .k { font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:var(--dim);
+        font-family:"Orbitron"; font-weight:700; }
+      .spec .v { font-family:"Orbitron"; font-weight:800; font-size:20px; margin-top:4px; }
+      .spec .v.red{color:var(--red)} .spec .v.green{color:var(--green)} .spec .v.orange{color:var(--orange2)}
+
+      /* feature cards */
+      .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:14px; }
+      .card { background:linear-gradient(180deg,var(--panel),var(--panel2)); border:1px solid var(--line);
+        border-radius:12px; padding:16px 18px; }
+      ul { margin:0 0 12px; padding-left:20px; } li { margin:4px 0; color:#d6def3; }
+      li b { color:var(--ink); }
+
+      .cars { display:flex; gap:14px; justify-content:center; flex-wrap:wrap; margin:6px 0 4px; }
+      .cars img { height:64px; filter:saturate(1.4) brightness(1.15) drop-shadow(0 8px 10px rgba(0,0,0,.5)); }
+
+      .cta { display:flex; gap:12px; flex-wrap:wrap; justify-content:center; margin-top:22px; }
+      .btn { font-family:"Orbitron"; font-weight:800; letter-spacing:.5px; text-decoration:none; padding:13px 26px;
+        border-radius:12px; background:linear-gradient(180deg,var(--orange2),var(--orange)); color:#1a1206;
+        box-shadow:0 8px 22px rgba(255,122,26,.3); }
+      .btn.ghost { background:none; border:1px solid var(--line); color:var(--ink); box-shadow:none; }
+
+      footer { text-align:center; margin-top:46px; color:var(--dim); font-size:14px; }
+      .tag { display:inline-block; font-family:"Orbitron"; font-weight:700; font-size:11px; letter-spacing:1px;
+        color:var(--green); border:1px solid rgba(37,207,99,.4); border-radius:999px; padding:3px 10px; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+
+      <div class="hero">
+        <img src="assets/logo-redline-rush.png" alt="Redline Rush" />
+        <div class="sub">Multiplayer Crash Racing — Game Sheet</div>
+        <div class="quick">
+          <span class="pill">Game type <b>Crash</b></span>
+          <span class="pill">RTP <b>97%</b></span>
+          <span class="pill">Max win <b>×10,000</b></span>
+          <span class="pill"><b>Provably Fair</b></span>
+          <span class="pill">HTML5 / <b>PWA</b></span>
+        </div>
+      </div>
+
+      <h2><span class="bar"></span>Specs</h2>
+      <div class="specs">
+        <div class="spec"><div class="k">Game Type</div><div class="v">Crash Racing</div></div>
+        <div class="spec"><div class="k">RTP</div><div class="v green">97.0%</div></div>
+        <div class="spec"><div class="k">Max Win</div><div class="v orange">×10,000</div></div>
+        <div class="spec"><div class="k">Volatility</div><div class="v">Medium–High</div></div>
+        <div class="spec"><div class="k">House Edge</div><div class="v">3.0%</div></div>
+        <div class="spec"><div class="k">Bets / Round</div><div class="v">Up to 2</div></div>
+        <div class="spec"><div class="k">Devices</div><div class="v">Desktop · Mobile · Tablet</div></div>
+        <div class="spec"><div class="k">Technology</div><div class="v">HTML5 / PWA</div></div>
+        <div class="spec"><div class="k">Fairness</div><div class="v">Provably Fair</div></div>
+      </div>
+
+      <h2><span class="bar"></span>Key advantages</h2>
+      <div class="cards">
+        <div class="card"><h3>Real-time multiplayer</h3><p class="muted">One shared race runs for every connected player — live drivers leaderboard, live chat and a synchronized round loop create social tension on every bet.</p></div>
+        <div class="card"><h3>Strategy-proof math</h3><p class="muted">EV equals the RTP for <em>any</em> cash-out target and <em>any</em> car chosen. Players can't out-math the house; operators get a stable, certifiable margin.</p></div>
+        <div class="card"><h3>Provably fair</h3><p class="muted">Every crash point is committed (hashed) before betting and revealed after, with a built-in client-side verifier — full transparency, zero trust required.</p></div>
+        <div class="card"><h3>Mobile-first</h3><p class="muted">Fully responsive from 320px phones to desktop: collapsible panels, one-tap betting, sound controls and a fast PWA shell.</p></div>
+      </div>
+
+      <h2><span class="bar"></span>Gameplay</h2>
+      <div class="cars">
+        <img src="assets/car-red.png" alt="" /><img src="assets/car-blue.png" alt="" /><img src="assets/car-yellow.png" alt="" />
+      </div>
+      <ul>
+        <li><b>Pick a car</b> — three cars (Red, Blue, Yellow) line up each round; choose one to back.</li>
+        <li><b>Place up to two bets</b> per round, each with its own stake and optional <b>auto cash-out</b> target.</li>
+        <li><b>Auto-bet</b> — let it ride for N rounds automatically.</li>
+        <li><b>Watch the multiplier climb</b> as the cars race — and <b>cash out before your car breaks down.</b></li>
+        <li>If your car crashes before you cash out, the bet is lost. The longer you wait, the bigger the payout — and the bigger the risk.</li>
+      </ul>
+
+      <h2><span class="bar"></span>Graphics &amp; presentation</h2>
+      <div class="cards">
+        <div class="card"><h3>Cinematic top-down racing</h3><p class="muted">A camera that tracks the leader, neon speed trails that intensify with velocity, spinning wheels, exhaust glow and a dramatic crash spin-out.</p></div>
+        <div class="card"><h3>F1-style start lights</h3><p class="muted">A five-light countdown sequence and a "GO!" launch build anticipation before every race.</p></div>
+        <div class="card"><h3>Full sound design</h3><p class="muted">Engine loops that pitch up with speed, overtake cues, win chimes and countdown beeps — with an in-game volume / mute control.</p></div>
+        <div class="card"><h3>Live HUD</h3><p class="muted">Current leader, last-rounds history, live drivers panel and an animated balance keep the screen alive between bets.</p></div>
+      </div>
+
+      <h2><span class="bar"></span>Social &amp; retention</h2>
+      <p>A shared, real-time round loop with a live drivers panel, live chat and a running results history keeps every session social and competitive between bets.</p>
+
+      <h2><span class="bar"></span>Math &amp; fairness</h2>
+      <ul>
+        <li>Classic crash survival function: <b>P(crash ≥ m) = RTP / m</b>, so cashing at any target T returns EV = T·(RTP/T) = <b>RTP</b>.</li>
+        <li>All three cars draw independently from the same distribution — car choice never changes the odds.</li>
+        <li><b>Server-authoritative:</b> crash points are decided server-side from a committed seed; the client only ever renders events.</li>
+        <li><b>Commit → reveal:</b> SHA-256 of the server seed is published before betting; the seed is revealed at settle so anyone can recompute and verify (HMAC-SHA256, byte-identical client verifier included).</li>
+        <li>Max-win cap and a 97% RTP are enforced in the engine and parity-tested against a reference simulation.</li>
+      </ul>
+
+      <h2><span class="bar"></span>Technology &amp; integration (operator-ready)</h2>
+      <ul>
+        <li><b>Front end:</b> dependency-free HTML5 / PWA, WebSocket real-time, responsive down to 320px.</li>
+        <li><b>Back end:</b> Node + TypeScript, one authoritative round loop, allow-listed &amp; rate-limited inbound protocol.</li>
+        <li><b>Wallet:</b> idempotent, append-only ledger (debit once / pay once); Postgres adapter with row-locked transactions and exact <b>NUMERIC</b> money; or a seamless operator-wallet API.</li>
+        <li><b>Auth:</b> operator-signed JWT; production refuses to boot unauthenticated.</li>
+        <li><b>Responsible gaming:</b> bet / loss / session limits, self-exclusion, reality-check nudges.</li>
+        <li><b>Ops:</b> Prometheus metrics &amp; live RTP, health / readiness probes, optional Redis for stateless rounds across a fleet, Docker-ready.</li>
+      </ul>
+
+      <h2><span class="bar"></span>In summary</h2>
+      <p>Redline Rush packages the proven crash mechanic into a social, real-time racing show: a strategy-proof 97% RTP, provable fairness, a polished mobile-first presentation and an operator-ready back end — a complete, certifiable game built end to end.</p>
+
+      <div class="cta">
+        <a class="btn" href="index.html">▶ Play the demo</a>
+        <a class="btn ghost" href="index.html">View the game</a>
+      </div>
+
+      <footer>
+        <span class="tag">Playable offline demo included</span>
+        <p style="margin-top:12px">Contact: <a href="mailto:ronigames.hq@gmail.com">ronigames.hq@gmail.com</a></p>
+        <p class="muted" style="font-size:12px">© Redline Rush — demo build. Play money only, no real-money wagering.</p>
+      </footer>
+
+    </div>
+  </body>
+</html>
