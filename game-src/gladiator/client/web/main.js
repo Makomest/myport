@@ -891,11 +891,12 @@ paintChips(); // reflect the stored stake on load, so the highlight cannot disag
 // sound: bronze medallion icon opens a volume slider popover (0 = mute, else quieter/louder)
 const muteBtn = $("mute"), muteImg = $("mute-img"), volPop = $("vol-pop"), volSlider = $("vol-slider");
 const setMuteIcon = () => (muteImg.src = A + (Sfx.muted ? "btn-soundmute.png" : "btn-sound.png"));
+// declared, not assigned to a const: it is called just below, before this line would run
+function paintVol() { const o = $("vol-out"); if (o) o.textContent = Math.round(Sfx.volume * 100) + "%"; }
 volSlider.value = Math.round(Sfx.volume * 100);
 paintVol();
 setMuteIcon();
 muteBtn.onclick = (e) => { e.stopPropagation(); Sfx.resume(); Sfx.toggle(); volPop.classList.toggle("show"); };
-const paintVol = () => { const o = $("vol-out"); if (o) o.textContent = Math.round(Sfx.volume * 100) + "%"; };
 volSlider.oninput = () => { Sfx.setVolume(volSlider.value / 100); setMuteIcon(); paintVol(); };
 volSlider.onchange = () => { if (!Sfx.muted) Sfx.toggle(); };
 volPop.onclick = (e) => e.stopPropagation();
