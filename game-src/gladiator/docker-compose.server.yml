@@ -4,7 +4,7 @@ services:
     container_name: gladiator
     ports:
       - "127.0.0.1:8790:8790"   # WebSocket game server (Caddy proxies it)
-      - "127.0.0.1:3000:3000"   # web client (Caddy proxies it)
+      - "127.0.0.1:3100:3000"   # web client — host 3000 is taken by privamesh
     environment:
       DATABASE_URL: postgres://gladiator:${GLAD_DB_PASS}@postgres:5432/gladiator
       REDIS_URL: redis://redis:6379
