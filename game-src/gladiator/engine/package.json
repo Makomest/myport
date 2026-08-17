@@ -1,0 +1,18 @@
+{
+  "name": "gladiator-engine",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Phase-1 server-authoritative game engine (TypeScript) — the certifiable RGS core",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "parity": "tsc && node parity.mjs",
+    "demo": "tsc && node demo.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.2",
+    "typescript": "^6.0.3"
+  }
+}

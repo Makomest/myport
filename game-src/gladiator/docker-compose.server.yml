@@ -1,0 +1,43 @@
+services:
+  app:
+    image: gladiator
+    container_name: gladiator
+    ports:
+      - "127.0.0.1:8790:8790"   # WebSocket game server (Caddy proxies it)
+      - "127.0.0.1:3000:3000"   # web client (Caddy proxies it)
+    environment:
+      DATABASE_URL: postgres://gladiator:${GLAD_DB_PASS}@postgres:5432/gladiator
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16
+    container_name: gladiator-pg
+    environment:
+      POSTGRES_DB: gladiator
+      POSTGRES_USER: gladiator
+      POSTGRES_PASSWORD: ${GLAD_DB_PASS}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gladiator -d gladiator"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+    restart: unless-stopped
+
+  redis:
+    image: redis:7
+    container_name: gladiator-redis
+    volumes:
+      - redisdata:/data
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  redisdata:

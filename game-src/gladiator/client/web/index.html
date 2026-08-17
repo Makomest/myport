@@ -1,0 +1,670 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    <title>Gladiator</title>
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <meta name="theme-color" content="#0b0c14" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Gladiator" />
+    <link rel="apple-touch-icon" href="./assets/icon-192.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- non-blocking: page paints with serif fallback even if Google Fonts is blocked/offline -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;800;900&family=EB+Garamond:ital,wght@0,600;0,700;1,600&display=swap" media="print" onload="this.media='all'" />
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;800;900&family=EB+Garamond:ital,wght@0,600;0,700;1,600&display=swap" /></noscript>
+    <style>
+      :root {
+        --bg: #0b0c14; --panel: rgba(20,21,38,.72); --line: #2a2c45; --gold: #ffd766; --gold2: #c8a13a;
+        --green: #2ee06b; --green2: #1f7d44; --txt: #f0eee8; --dim: #9aa0b5;
+      }
+      * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+      html, body { margin: 0; height: 100%; color: var(--txt); font-family: "EB Garamond", Georgia, serif; overflow: hidden; }
+      /* side backdrop behind #app (fills the bars on wide screens instead of black) */
+      body { background: #000 url(./assets/BGsecond.png) center center / cover no-repeat; }
+      /* default scale = the 125% look the design was tuned at (desktop / wide) */
+      body { zoom: 1.25; }
+      #app { position: relative; width: 100%; max-width: 480px; margin: 0 auto; height: calc(100dvh / 1.25); min-height: calc(100vh / 1.25);
+        background: var(--bg); display: flex; flex-direction: column; overflow: hidden; }
+      /* phones: drop the extra zoom (the viewport is already the right size) and fill the screen edge-to-edge */
+      @media (max-width: 560px) {
+        body { zoom: 1; }
+        #app { max-width: 100%; height: 100dvh; min-height: 100dvh; }
+      }
+
+      /* HUD */
+      #hud { position: absolute; top: 0; left: 0; right: 0; display: flex; align-items: center; gap: 8px; z-index: 6;
+        padding: max(10px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) 10px max(10px, env(safe-area-inset-left)); }
+      /* player plaque - frame-player.png asset; avatar sits in the ring hole.
+         Brown panel backing is baked into the same background stack so it can never escape the frame. */
+      /* new frame-player.png is 467x190: panel fully opaque (no backing needed), ring hole x34-176 y27-162 */
+      .opp-card { position: relative; width: 165px; height: 67px; flex: none; }
+      .opp-card::after { content: ""; position: absolute; inset: 0; pointer-events: none;
+        background: url(./assets/frame-player.png) 0 0 / 100% 100% no-repeat; }
+      #avatar { position: absolute; left: 13px; top: 10px; width: 48px; height: 48px; border-radius: 50%; object-fit: cover; }
+      #avatar.levelup { animation: avLevel .9s ease; }
+      @keyframes avLevel { 0%,100%{filter: none; transform: scale(1)} 32%{filter: brightness(1.8) drop-shadow(0 0 12px rgba(255,215,120,.95)); transform: scale(1.16)} }
+      .labels { position: absolute; left: 44%; right: 9%; top: 50%; transform: translateY(-50%); z-index: 1; }
+      .labels .t { font-family: "Cinzel", serif; font-weight: 800; font-size: 13px; line-height: 1.1; color: #f3ead6;
+        max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: 4px; }
+      /* XP bar with the level badge at the end of the track (kept inside the panel) */
+      .xp { position: relative; height: 6px; margin-right: 17px; border-radius: 999px; background: rgba(8,5,2,.6); border: 1px solid #5e4a22; box-shadow: inset 0 1px 2px rgba(0,0,0,.55); }
+      .xp-fill { height: 100%; width: 0; border-radius: 999px; background: linear-gradient(90deg, #ffe08a, #d4a94e);
+        box-shadow: 0 0 6px rgba(231,198,106,.55); transition: width .6s cubic-bezier(.3,.7,.3,1); }
+      .lvl { position: absolute; right: -16px; top: 50%; transform: translateY(-50%); min-width: 12px; text-align: center; line-height: 1;
+        font: 800 8px "Cinzel", serif; color: #2a1f08; background: linear-gradient(180deg, #ffe08a, #c8a13a);
+        border: 1px solid #8a6a2a; border-radius: 999px; padding: 2px 3px; box-shadow: 0 1px 3px rgba(0,0,0,.5); }
+      /* right-aligned; can shrink (ellipsis) so a huge balance never pushes the icons off-screen.
+         Numbers are compact-formatted in JS (K/M/B), so ellipsis is only a last-resort safety. */
+      .bal { margin-left: auto; flex: 0 1 auto; min-width: 0; max-width: 46%; text-align: right; white-space: nowrap;
+        overflow: hidden; text-overflow: ellipsis; font-weight: 700; font-size: 23px; color: #e9cd83;
+        text-shadow: 0 1px 2px #000, 0 0 16px rgba(231,198,106,.4); }
+      .hud-actions { display: flex; gap: 5px; flex: none; }
+      .icon { position: relative; width: 36px; height: 36px; border-radius: 9px; border: 1px solid #8a6a2a; cursor: pointer;
+        background: linear-gradient(180deg, rgba(58,46,26,.85), rgba(22,17,10,.9));
+        box-shadow: inset 0 1px 0 rgba(231,198,106,.25), 0 3px 8px rgba(0,0,0,.45);
+        display: grid; place-items: center; }
+      /* leaderboard rank under the Arena button */
+      .rank-num { position: absolute; top: calc(100% + 4px); left: 50%; transform: translateX(-50%); pointer-events: none; white-space: nowrap;
+        font: 800 11px "Cinzel", serif; color: var(--gold); text-shadow: 0 1px 2px #000;
+        background: linear-gradient(180deg, rgba(40,33,20,.94), rgba(16,13,8,.96)); border: 1px solid #8a6a2a; border-radius: 999px; padding: 1px 7px; }
+      .rank-num.up { animation: rankUp .8s ease; }
+      .rank-num.down { animation: rankDown .8s ease; }
+      @keyframes rankUp { 0%,100%{color: var(--gold); transform: translateX(-50%) scale(1)} 35%{color: #7fe07f; transform: translateX(-50%) scale(1.32); filter: drop-shadow(0 0 8px rgba(127,224,127,.85))} }
+      @keyframes rankDown { 0%,100%{color: var(--gold); transform: translateX(-50%) scale(1)} 35%{color: #ff8a6b; transform: translateX(-50%) scale(1.32); filter: drop-shadow(0 0 8px rgba(255,90,60,.85))} }
+      .icon img { width: 20px; height: 20px; object-fit: contain; }
+      /* sound medallion asset is its own full button face */
+      .icon.sound { border: 0; background: none; box-shadow: none; }
+      .icon.sound img { width: 34px; height: 34px; }
+      .icon:active { transform: scale(.9); } .icon:disabled { opacity: .4; }
+
+      /* STAGE */
+      #stage { position: relative; flex: 1; overflow: hidden; background: #0b0c14; }
+      /* arena background on its own layer so the "camera" can push in as the tier climbs */
+      .arena-bg { position: absolute; inset: 0; z-index: 0; background: url(./assets/arena-bg.png) center / cover no-repeat;
+        transform: scale(var(--cam, 1)); transform-origin: 50% 46%; transition: transform 1.4s cubic-bezier(.25,.6,.3,1); will-change: transform; }
+      .vignette { position: absolute; inset: 0; pointer-events: none;
+        background: radial-gradient(120% 60% at 50% 38%, transparent 40%, rgba(0,0,0,.45) 100%); }
+
+      /* sits right above the fighters (same anchor math as .fighters) */
+      .mult { position: absolute; bottom: calc(330px + clamp(260px, 44%, 460px)); left: 0; right: 0; text-align: center; z-index: 4; font-size: 72px; font-weight: 700; letter-spacing: 0;
+        font-family: "EB Garamond", Georgia, serif;
+        background: linear-gradient(180deg, #fdf3cd 0%, #efd388 30%, #d4a94e 60%, #9a6f24 100%);
+        -webkit-background-clip: text; background-clip: text; color: transparent;
+        filter: drop-shadow(0 3px 2px rgba(0,0,0,.55)) drop-shadow(0 0 26px rgba(231,198,106,.35)); transition: transform .12s; }
+      .mult.pop { animation: pop .42s cubic-bezier(.2,1.6,.4,1); }
+      @keyframes pop { 0%{transform:scale(1)} 40%{transform:scale(1.22)} 100%{transform:scale(1)} }
+
+      /* ROUND - banner-round.png pennant asset, number overlaid on the cloth */
+      .round-badge { position: absolute; top: 11%; left: 10px; z-index: 5; width: 106px; height: 162px; text-align: center;
+        font-family: "Cinzel", serif; background: url(./assets/banner-round.png) center / contain no-repeat;
+        filter: drop-shadow(0 4px 8px rgba(0,0,0,.45)); }
+      .round-badge i { position: absolute; left: 0; right: 0; top: 25%; font-style: normal; font-size: 14px; letter-spacing: 2px; font-weight: 900; color: #4a4338;
+        text-shadow: 0 1px 0 rgba(255,255,255,.35); }
+      .round-badge b { position: absolute; left: 0; right: 0; top: 36%; font-size: 38px; line-height: 1; font-weight: 900; color: #3e372c;
+        text-shadow: 0 1px 0 rgba(255,255,255,.4); transition: color .3s; }
+      /* the banner heats up the deeper the run goes (round 1 = plain) */
+      .round-badge { transform-origin: 50% 42%; }
+      .round-badge.r1 { filter: drop-shadow(0 4px 8px rgba(0,0,0,.45)) drop-shadow(0 0 7px rgba(231,198,106,.55)); }
+      .round-badge.r2 { filter: drop-shadow(0 4px 8px rgba(0,0,0,.45)) drop-shadow(0 0 12px rgba(231,198,106,.85)); animation: rbBeat 2s ease-in-out infinite; }
+      .round-badge.r3 { filter: drop-shadow(0 4px 8px rgba(0,0,0,.45)) drop-shadow(0 0 17px rgba(255,150,55,.9)); animation: rbBeat 1.3s ease-in-out infinite; }
+      .round-badge.r4 { filter: drop-shadow(0 4px 8px rgba(0,0,0,.45)) drop-shadow(0 0 24px rgba(255,80,35,1)); animation: rbRage .55s ease-in-out infinite; }
+      @keyframes rbBeat { 0%,100%{transform: scale(1)} 50%{transform: scale(1.07)} }
+      @keyframes rbRage { 0%{transform: scale(1.03) rotate(-1.5deg)} 25%{transform: scale(1.11) rotate(1.5deg) translateX(1px)} 50%{transform: scale(1.05) rotate(-1.5deg) translateX(-1px)} 75%{transform: scale(1.11) rotate(1.5deg)} 100%{transform: scale(1.03) rotate(-1.5deg)} }
+      .round-badge.r3 b { color: #5a2c10; } .round-badge.r4 b { color: #7a1d0c; text-shadow: 0 1px 0 rgba(255,210,160,.5), 0 0 10px rgba(255,80,40,.8); }
+      /* Daily Arena tracker: total stars + your leaderboard rank, with a credit pulse */
+      .points { position: absolute; top: 9%; right: 12px; z-index: 5; font-family: "Cinzel", serif; font-weight: 800; font-size: 13px; letter-spacing: .5px;
+        color: var(--gold); background: linear-gradient(180deg, rgba(40,33,20,.9), rgba(16,13,8,.9)); border: 1px solid #8a6a2a; border-radius: 999px; padding: 5px 12px;
+        transform-origin: right center; }
+      .points .rk { color: #d8c79f; font-weight: 700; }
+      .points.credit { animation: ptCredit .7s ease; }
+      @keyframes ptCredit { 0%,100%{transform: scale(1); filter: none} 35%{transform: scale(1.24); filter: brightness(1.5) drop-shadow(0 0 10px rgba(255,215,120,.9))} }
+      .climb { position: absolute; top: 15.5%; right: 14px; z-index: 6; display: none; font: 800 13px "Cinzel", serif; color: #7fe07f; text-shadow: 0 1px 3px rgba(0,0,0,.75); }
+      .climb.go { display: block; animation: climbUp 1.5s ease forwards; }
+      @keyframes climbUp { 0%{opacity:0; transform: translateY(8px)} 18%{opacity:1; transform: translateY(0)} 80%{opacity:1} 100%{opacity:0; transform: translateY(-12px)} }
+      /* LEVEL UP toast */
+      /* sits just BELOW the multiplier (same bottom-anchor, ~75px lower) so it never overlaps it */
+      .lvlup { position: absolute; bottom: calc(255px + clamp(260px, 44%, 460px)); left: 0; right: 0; text-align: center; z-index: 12; pointer-events: none; opacity: 0;
+        font: 900 28px "Cinzel", serif; letter-spacing: 2px;
+        background: linear-gradient(180deg, #fff2c0, #ffd766 50%, #c8a13a); -webkit-background-clip: text; background-clip: text; color: transparent;
+        filter: drop-shadow(0 3px 3px rgba(0,0,0,.6)) drop-shadow(0 0 18px rgba(255,210,110,.7)); }
+      .lvlup.go { animation: lvlUp 1.7s ease forwards; }
+      @keyframes lvlUp { 0%{opacity:0; transform: scale(.5)} 22%{opacity:1; transform: scale(1.12)} 75%{opacity:1; transform: scale(1)} 100%{opacity:0; transform: translateY(-26px) scale(1)} }
+
+      /* over-the-shoulder diagonal composition: player large in the foreground-left,
+         enemy smaller and higher (midground) on the right.
+         Anchored a fixed distance above the controls so feet never collide with the slots. */
+      .fighters { position: absolute; left: 0; right: 0; bottom: 365px; height: 44%; max-height: 460px; min-height: 260px; z-index: 2; }
+      .fighter { position: absolute; bottom: 0; height: 100%; width: 44%; }
+      .fighter.player { left: 0; width: 48%; height: 100%; z-index: 2; }
+      .fighter.enemy { right: 6%; width: 33%; height: 74%; bottom: 26%; z-index: 1; }
+      .fighter.enemy img { filter: drop-shadow(0 8px 10px rgba(0,0,0,.4)) brightness(.9); }
+      /* contact shadow on the sand under the feet */
+      .fighter::before { content: ""; position: absolute; bottom: -8px; left: 50%; transform: translateX(-50%);
+        width: 58%; height: 24px; border-radius: 50%;
+        background: radial-gradient(ellipse at center, rgba(20,10,2,.6), rgba(20,10,2,.32) 55%, transparent 74%);
+        filter: blur(3px); }
+      /* player (foreground) gets a stronger, larger contact shadow */
+      .fighter.player::before { width: 80%; height: 42px; bottom: -14px;
+        background: radial-gradient(ellipse at center, rgba(8,4,0,.92), rgba(8,4,0,.52) 50%, transparent 70%);
+        animation: shadowSway 3.4s ease-in-out infinite; }
+      .fighter.enemy::before { animation: shadowSway 3.4s ease-in-out infinite; animation-delay: -1.7s; }
+      @keyframes shadowSway { 0%,100%{transform: translateX(-50%) scaleX(1); opacity:.9} 50%{transform: translateX(-50%) scaleX(.9); opacity:.62} }
+      .fighter img { height: 100%; width: 100%; object-fit: contain; object-position: bottom center; position: relative;
+        filter: drop-shadow(0 10px 12px rgba(0,0,0,.4)); }
+      .fighter.player img { animation: sway 3.4s ease-in-out infinite; }
+      .fighter.enemy img { animation: sway 3.4s ease-in-out infinite; animation-delay: -1.7s; }
+      @keyframes sway { 0%,100%{transform: translateY(0)} 50%{transform: translateY(-6px)} }
+      .fighters.clash .fighter.player { animation: lungeR .5s ease; }
+      .fighters.clash .fighter.enemy { animation: lungeL .5s ease; }
+      /* diagonal lunges along the depth axis (player up-right, enemy down-left) */
+      @keyframes lungeR { 0%,100%{transform: translate(0,0)} 45%{transform: translate(24%,-9%)} 62%{transform: translate(19%,-7%)} }
+      @keyframes lungeL { 0%,100%{transform: translate(0,0)} 45%{transform: translate(-24%,9%)} 62%{transform: translate(-19%,7%)} }
+      .fighter img.swap { animation: swapPop .5s cubic-bezier(.2,1.5,.4,1); }
+      @keyframes swapPop { 0%{transform: scale(.55); opacity:.15; filter: brightness(2)} 60%{transform: scale(1.12)} 100%{transform: scale(1)} }
+      .fighter.dead { animation: die .6s ease forwards; }
+      @keyframes die { to { transform: rotate(-12deg) translateY(10px); filter: grayscale(1) brightness(.45); opacity: .7; } }
+      .spark { position: absolute; left: 56%; bottom: 52%; width: 90px; height: 90px; transform: translate(-50%,0) scale(.2);
+        background: radial-gradient(circle, #fff, #ffd766 30%, transparent 62%); opacity: 0; z-index: 3; }
+      .spark.go { animation: sparkFlash .5s ease; }
+      @keyframes sparkFlash { 0%{opacity:0;transform:translate(-50%,0) scale(.2)} 30%{opacity:1;transform:translate(-50%,0) scale(1.1)} 100%{opacity:0;transform:translate(-50%,0) scale(1.5)} }
+      /* central-flash tint variants (random per clash) */
+      .spark.t-gold { background: radial-gradient(circle, #fff, #ffd766 30%, transparent 62%); }
+      .spark.t-red  { background: radial-gradient(circle, #fff, #ff7a2a 30%, transparent 60%); }
+      .spark.t-cool { background: radial-gradient(circle, #fff, #bfe0ff 35%, transparent 62%); }
+      /* spark particles flying out from the point of contact */
+      .sparks { position: absolute; left: 56%; bottom: 52%; width: 0; height: 0; z-index: 4; pointer-events: none; }
+      .spk { position: absolute; left: 0; top: 0; border-radius: 50%; opacity: 0; will-change: transform, opacity;
+        background: radial-gradient(circle, #fff 12%, var(--c) 55%, transparent 76%); filter: drop-shadow(0 0 3px var(--c));
+        animation: spkFly var(--d) ease-out forwards; }
+      @keyframes spkFly {
+        0% { opacity: 1; transform: translate(-50%,-50%) scale(1); }
+        100% { opacity: 0; transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(.2); } }
+
+      /* GEMS (item icons) - sit just above the bet chips */
+      .gems { display: flex; gap: 14px; justify-content: center; margin: 0 0 4px; }
+      .gem-slot { width: 80px; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+      .gem { position: relative; width: 68px; height: 68px; border-radius: 16px; background: rgba(10,11,22,.45);
+        border: 2px dashed #33365a; display: grid; place-items: center; transition: transform .2s; }
+      .gem.filled { border: none; background: none; }
+      /* rarity tiers: stronger item => flashier entrance + bigger (pulsing) glow */
+      .gem.t1 { --g1: 5px; --g2: 5px; } .gem.t2 { --g1: 8px; --g2: 8px; } .gem.t3 { --g1: 12px; --g2: 16px; }
+      .gem.t4 { --g1: 14px; --g2: 23px; } .gem.t5 { --g1: 18px; --g2: 29px; } .gem.t6 { --g1: 22px; --g2: 36px; }
+      .gem.filled.show { animation: gemIn .5s cubic-bezier(.2,1.7,.4,1); }
+      .gem.t3.show, .gem.t4.show { animation: gemInBig .6s cubic-bezier(.2,1.7,.4,1); }
+      .gem.t5.show, .gem.t6.show { animation: gemInEpic .75s cubic-bezier(.2,1.5,.4,1); }
+      @keyframes gemIn { 0%{transform: scale(0) rotate(-30deg)} 70%{transform: scale(1.22) rotate(6deg)} 100%{transform: scale(1)} }
+      @keyframes gemInBig { 0%{transform: scale(0) rotate(-45deg); filter: brightness(2.2)} 60%{transform: scale(1.35) rotate(8deg); filter: brightness(1.4)} 100%{transform: scale(1); filter: brightness(1)} }
+      @keyframes gemInEpic { 0%{transform: scale(0) rotate(-130deg); filter: brightness(3)} 45%{transform: scale(1.6) rotate(12deg); filter: brightness(1.9)} 68%{transform: scale(.9) rotate(-3deg)} 100%{transform: scale(1); filter: brightness(1)} }
+      /* expanding ring burst for epic+ drops */
+      .gem.t3.show::after, .gem.t4.show::after, .gem.t5.show::after, .gem.t6.show::after { content: ""; position: absolute; inset: -4px;
+        border-radius: 18px; border: 2px solid var(--gc); pointer-events: none; animation: ringBurst .65s ease-out forwards; }
+      .gem.t5.show::after, .gem.t6.show::after { border-width: 3px; animation-duration: .85s; }
+      @keyframes ringBurst { 0%{opacity: .95; transform: scale(.55)} 100%{opacity: 0; transform: scale(2)} }
+      .gem-img { width: 100%; height: 100%; object-fit: contain; display: none; filter: drop-shadow(0 0 var(--g1, 8px) var(--gc)); }
+      /* legendary+ keep breathing after landing */
+      .gem.t4 .gem-img, .gem.t5 .gem-img, .gem.t6 .gem-img { animation: glowPulse 1.6s ease-in-out infinite; }
+      @keyframes glowPulse { 0%,100%{filter: drop-shadow(0 0 var(--g1) var(--gc))} 50%{filter: drop-shadow(0 0 var(--g2) var(--gc)) brightness(1.14)} }
+      .gem.filled .gem-img { display: block; }
+      .stack { position: absolute; right: -4px; top: -6px; background: var(--gold); color: #1a1408; font-weight: 900; font-size: 12px;
+        border-radius: 999px; padding: 1px 7px; display: none; box-shadow: 0 2px 6px rgba(0,0,0,.5); }
+      /* fixed label height so the row never shifts when the first item lands */
+      .gem-slot .label { font-family: "Cinzel", serif; font-size: 12px; font-weight: 800; letter-spacing: .5px; opacity: 0; height: 15px; line-height: 15px; }
+      .gem-slot.filled .label { opacity: 1; }
+
+      .gain { position: absolute; left: 0; right: 0; top: 33%; text-align: center; z-index: 6; pointer-events: none;
+        font-family: "EB Garamond", serif; font-weight: 700; font-size: 32px;
+        opacity: 0; text-shadow: 0 2px 3px rgba(0,0,0,.8), 0 2px 14px rgba(0,0,0,.6); }
+      .gain.go { animation: gainUp 1.05s ease forwards; }
+      @keyframes gainUp { 0%{opacity:0;transform:translateY(14px) scale(.8)} 22%{opacity:1;transform:translateY(-4px) scale(1.12)} 100%{opacity:0;transform:translateY(-56px) scale(1)} }
+
+      .stamp { position: absolute; inset: 0; z-index: 10; pointer-events: none; }
+      /* the win amount sits BELOW the banner so they never overlap */
+      .stamp b { position: absolute; top: var(--amt-top, 47%); left: 0; right: 0; text-align: center; font-family: "Cinzel", serif; font-size: 50px; font-weight: 900; letter-spacing: 3px; opacity: 0; transform: scale(2); }
+      /* antique-gold engraved win amount (matches the multiplier) */
+      .stamp b.gold { background: linear-gradient(180deg, #fdf3cd 0%, #efd388 40%, #d4a94e 65%, #9a6f24 100%);
+        -webkit-background-clip: text; background-clip: text; color: transparent !important;
+        filter: drop-shadow(0 3px 2px rgba(0,0,0,.6)) drop-shadow(0 0 24px rgba(231,198,106,.55)); }
+      /* blood-red engraved DEFEAT (same treatment as the gold) */
+      .stamp b.blood { background: linear-gradient(180deg, #ffc9b8 0%, #e0593c 40%, #a52818 70%, #5e120a 100%);
+        -webkit-background-clip: text; background-clip: text; color: transparent !important;
+        filter: drop-shadow(0 3px 2px rgba(0,0,0,.65)) drop-shadow(0 0 22px rgba(220,60,30,.5)); }
+      .stamp.show b { animation: stampIn .6s cubic-bezier(.2,1.4,.3,1) forwards; }
+      @keyframes stampIn { 0%{opacity:0;transform:scale(2.2)} 60%{opacity:1;transform:scale(.95)} 100%{opacity:1;transform:scale(1)} }
+      .flash { position: absolute; inset: 0; z-index: 7; opacity: 0; pointer-events: none; }
+      .flash.green { background: radial-gradient(circle, rgba(46,224,107,.5), transparent 70%); animation: flashFade .7s ease; }
+      .flash.red { background: radial-gradient(circle, rgba(255,60,60,.5), transparent 70%); animation: flashFade .6s ease; }
+      .flash.gold { background: radial-gradient(circle, rgba(255,215,0,.6), transparent 70%); animation: flashFade .9s ease; }
+      @keyframes flashFade { 0%{opacity:0} 25%{opacity:1} 100%{opacity:0} }
+      .coins { position: absolute; inset: 0; z-index: 8; pointer-events: none; overflow: hidden; }
+      .coin { position: absolute; left: 50%; top: 58%; width: 26px; height: 26px; animation: coinFly var(--d) ease-out forwards; }
+      @keyframes coinFly { 0%{transform: translate(-50%,0) scale(.4); opacity:1} 100%{transform: translate(calc(-50% + var(--dx)), var(--dy)) scale(1) rotate(var(--r)); opacity:0} }
+      /* coins streaming up into the balance when a win is credited */
+      .coinfly { position: absolute; left: 50%; top: 45%; width: 22px; height: 22px; opacity: 0; animation: coinTo .8s ease-in forwards; }
+      @keyframes coinTo { 0%{transform: translate(calc(-50% + var(--sx)), var(--sy)) scale(.95); opacity: 1}
+        80%{opacity: 1} 100%{transform: translate(calc(-50% + var(--tx)), var(--ty)) scale(.45); opacity: 0} }
+      /* glow-only pulse (no scale) so it never clips inside the overflow:hidden balance box */
+      .bal.credit { animation: balGain 1s ease; }
+      @keyframes balGain { 0%,100%{filter: none} 30%{filter: brightness(1.5) drop-shadow(0 0 10px rgba(255,220,120,.95))} 70%{filter: brightness(1.2)} }
+      .status { display: none; }
+
+      /* recent results strip (crash-game style) */
+      .history { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); display: flex; gap: 6px; z-index: 5; pointer-events: none; }
+      .pill { font-size: 11px; font-weight: 800; padding: 3px 9px; border-radius: 999px; background: rgba(12,13,26,.7); border: 1px solid var(--line); }
+      .pill.win { color: #7fe07f; } .pill.loss { color: #ff6b6b; }
+      /* ambient embers */
+      .embers { position: absolute; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; }
+      .ember { position: absolute; bottom: -12px; width: 4px; height: 4px; border-radius: 50%;
+        background: radial-gradient(circle, #ffd58a, #ff7a2a 60%, transparent); opacity: 0; animation: rise var(--d) linear infinite; animation-delay: var(--delay); }
+      @keyframes rise { 0%{transform: translate(0,0); opacity:0} 12%{opacity:.85} 88%{opacity:.45} 100%{transform: translate(var(--drift), -82vh); opacity:0} }
+      /* crowd cheer flash near the stands */
+      .cheer { position: absolute; top: 5%; left: 0; right: 0; height: 24%; z-index: 1; pointer-events: none; opacity: 0;
+        background: radial-gradient(60% 100% at 50% 0, rgba(255,222,150,.4), transparent 72%); }
+      .cheer.go { animation: cheerFlash .85s ease; }
+      @keyframes cheerFlash { 0%{opacity:0} 22%{opacity:1} 100%{opacity:0} }
+      /* tiered win banner */
+      /* image banner (banner-win/bigwin/megawin/epicwin/defeat) with a pulsing glow */
+      .winbanner { position: absolute; top: 33%; left: 0; right: 0; text-align: center; z-index: 9; pointer-events: none; opacity: 0; }
+      .winbanner img { width: 86%; max-width: 470px; height: auto;
+        filter: drop-shadow(0 4px 8px rgba(0,0,0,.55)) drop-shadow(0 0 22px rgba(255,200,90,.6)); }
+      .winbanner.defeat img { filter: drop-shadow(0 4px 8px rgba(0,0,0,.6)) drop-shadow(0 0 18px rgba(220,40,30,.7)); }
+      .winbanner.go { animation: winIn 1.6s ease forwards; }
+      .winbanner.go img { animation: bannerGlow 1.6s ease; }
+      .winbanner.defeat.go img { animation: bannerGlowRed 1.6s ease; }
+      @keyframes winIn { 0%{opacity:0;transform:scale(.45)} 20%{opacity:1;transform:scale(1.12)} 80%{opacity:1;transform:scale(1)} 100%{opacity:0;transform:scale(1)} }
+      @keyframes bannerGlow { 0%,100%{filter: drop-shadow(0 4px 8px rgba(0,0,0,.55)) drop-shadow(0 0 14px rgba(255,200,90,.45))}
+        50%{filter: drop-shadow(0 4px 8px rgba(0,0,0,.55)) drop-shadow(0 0 38px rgba(255,215,120,.95)) brightness(1.12)} }
+      @keyframes bannerGlowRed { 0%,100%{filter: drop-shadow(0 4px 8px rgba(0,0,0,.6)) drop-shadow(0 0 14px rgba(220,40,30,.5))}
+        50%{filter: drop-shadow(0 4px 8px rgba(0,0,0,.6)) drop-shadow(0 0 42px rgba(255,40,30,.95)) brightness(1.12)} }
+      /* blood splatter on defeat */
+      .blood { position: absolute; inset: 0; z-index: 8; pointer-events: none; overflow: hidden; }
+      .splat { position: absolute; opacity: 0; mix-blend-mode: multiply;
+        background: radial-gradient(circle at 42% 36%, #c41d1d, #8a0f0f 52%, #4c0606 78%, transparent 88%);
+        box-shadow: 0 0 6px rgba(120,10,10,.5); animation: splat .9s ease-out forwards; }
+      @keyframes splat {
+        0% { opacity: 0; transform: scale(.5) rotate(var(--rot)); }
+        24% { opacity: .92; transform: scale(1.04) rotate(var(--rot)); }
+        38% { opacity: .88; transform: scale(1) rotate(var(--rot)); }
+        62% { opacity: .6; } 100% { opacity: 0; } }
+      /* roses thrown from the stands on a win */
+      .roses { position: absolute; inset: 0; z-index: 8; pointer-events: none; overflow: hidden; }
+      .rose { position: absolute; top: -8%; height: auto; opacity: 0; will-change: transform; filter: drop-shadow(0 2px 4px rgba(0,0,0,.5)); animation: roseFall var(--dur) ease-in forwards; }
+      @keyframes roseFall { 0%{transform: translate(0,0) rotate(0); opacity: 0} 12%{opacity: 1} 100%{transform: translate(var(--drift), 115%) rotate(var(--spin)); opacity: .85} }
+      /* multiplier heat + camera shake/zoom */
+      .mult.hot { background: linear-gradient(180deg, #ffdca0, #ff9b3f 50%, #ff5a2a); -webkit-background-clip: text; background-clip: text; text-shadow: 0 6px 34px rgba(255,120,40,.55); }
+      .mult.red { background: linear-gradient(180deg, #ffd0d0, #ff5a5a 50%, #e01f1f); -webkit-background-clip: text; background-clip: text; text-shadow: 0 6px 38px rgba(255,40,40,.6); }
+      #stage.shake { animation: shake .35s ease; }
+      @keyframes shake { 0%,100%{transform: translate(0,0)} 20%{transform: translate(-5px,2px)} 40%{transform: translate(6px,-2px)} 60%{transform: translate(-4px,3px)} 80%{transform: translate(4px,-1px)} }
+      #stage.zoom { animation: zoomPulse .9s ease; }
+      @keyframes zoomPulse { 0%{transform: scale(1)} 30%{transform: scale(1.045)} 100%{transform: scale(1)} }
+      .icon.sound { font-size: 18px; }
+
+      /* CONTROLS */
+      #controls { position: absolute; left: 0; right: 0; bottom: 0; display: flex; flex-direction: column; gap: 10px; z-index: 6;
+        padding: 10px max(14px, env(safe-area-inset-right)) max(16px, calc(12px + env(safe-area-inset-bottom))) max(14px, env(safe-area-inset-left));
+        background: linear-gradient(180deg, transparent, rgba(8,9,16,.85) 40%); }
+      /* bet COINS - coin-10/20/50.png assets ($ values baked in) */
+      .bets { display: flex; gap: 18px; justify-content: center; align-items: center; }
+      .chip { width: 62px; height: 62px; border: 0; padding: 0; cursor: pointer; border-radius: 50%;
+        color: transparent; font-size: 0; background: transparent center / contain no-repeat;
+        filter: saturate(.72) brightness(.78); transition: transform .12s, filter .2s; }
+      .chip[data-bet="10"] { background-image: url(./assets/coin-10.png); }
+      .chip[data-bet="20"] { background-image: url(./assets/coin-20.png); }
+      .chip[data-bet="50"] { background-image: url(./assets/coin-50.png); }
+      .chip.active { filter: drop-shadow(0 0 12px rgba(231,198,106,.85)); transform: scale(1.14); }
+
+      /* metal plate buttons - btn-cashout / btn-continue / btn-start assets */
+      .btn { border: 0; border-radius: 6px; cursor: pointer; height: 62px; padding: 0; position: relative;
+        background: transparent 0 0 / 100% 100% no-repeat;
+        color: transparent; text-shadow: none; font-size: 0;
+        transition: transform .08s, filter .2s, opacity .2s; }
+      .btn:active { transform: scale(.97); } .btn:disabled { opacity: .55; filter: brightness(.55) saturate(.75); cursor: not-allowed; }
+      .btn.cash { height: 64px; background-image: url(./assets/btn-cashout.png); }
+      .btn.cash b { position: absolute; left: 56%; right: 7%; top: 50%; transform: translateY(-51%); text-align: center;
+        font-family: "Cinzel", serif; font-weight: 900; font-size: 26px; letter-spacing: 1px;
+        color: #45290a; text-shadow: 0 1px 0 rgba(255,243,205,.45), 0 -1px 1px rgba(50,25,4,.5); }
+      .btn.cash:not(:disabled) { animation: cashPulse 1.6s ease-in-out infinite; }
+      @keyframes cashPulse { 0%,100%{filter: brightness(1)} 50%{filter: brightness(1.14) drop-shadow(0 0 14px rgba(231,198,106,.65))} }
+      .row2 { display: flex; gap: 10px; }
+      /* equal halves no matter the label/padding (flex-basis:0 + min-width:0) */
+      .row2 .btn { flex: 1 1 0 !important; min-width: 0; width: 0; }
+      /* plates are blank now - render the labels in Cinzel (engraved) */
+      .btn.bronze { background-image: url(./assets/btn-continue.png);
+        font: 900 19px "Cinzel", serif; letter-spacing: 2px; color: #2e1808;
+        text-shadow: 0 1px 0 rgba(255,225,190,.4), 0 -1px 1px rgba(30,12,2,.6); }
+      .btn.steel { background-image: url(./assets/btn-start.png);
+        font: 900 19px "Cinzel", serif; letter-spacing: 2px; color: #2b313c;
+        text-shadow: 0 1px 0 rgba(255,255,255,.45), 0 -1px 1px rgba(10,14,20,.55);
+        padding-right: 22%; /* nudge the label toward the sword on the right of the plate */ }
+      .btn .sp { display: none; }
+
+      .modal { position: absolute; inset: 0; z-index: 30; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,.6); backdrop-filter: blur(2px); }
+      .modal.show { display: flex; }
+      .modal-card { width: 86%; max-height: 70%; overflow: auto; position: relative; padding: 20px 18px 18px; border-radius: 16px;
+        background: linear-gradient(180deg, #1b1c34 0%, #121327 100%);
+        border: 1px solid #6e5526;
+        box-shadow: 0 0 0 1px rgba(0,0,0,.55), 0 20px 55px rgba(0,0,0,.7), inset 0 1px 0 rgba(231,198,106,.14); }
+      /* ornamental gold rule across the top of every panel */
+      .modal-card::before { content: ""; position: absolute; left: 16px; right: 16px; top: 0; height: 2px; border-radius: 2px;
+        background: linear-gradient(90deg, transparent, #c8a13a, #ffe08a, #c8a13a, transparent); opacity: .8; }
+      .modal-card h3 { margin: 0 0 12px; padding-right: 36px; color: var(--gold); font-family: "Cinzel", serif; font-weight: 900; letter-spacing: 1.5px;
+        text-shadow: 0 1px 0 #000, 0 0 14px rgba(231,198,106,.35); }
+      .modal-card pre { white-space: pre-wrap; font-size: 13px; margin: 0; line-height: 1.5; }
+      /* shared close button - small gold-rimmed medallion */
+      #modal-close, .modal-card .x { position: absolute; right: 12px; top: 12px; z-index: 5; width: 32px; height: 32px; border-radius: 50%;
+        display: grid; place-items: center; cursor: pointer; font: 700 15px/1 system-ui, sans-serif; color: #f0d999; padding: 0;
+        background: linear-gradient(180deg, rgba(58,46,26,.95), rgba(22,17,10,.96)); border: 1px solid #8a6a2a;
+        box-shadow: inset 0 1px 0 rgba(231,198,106,.3), 0 2px 7px rgba(0,0,0,.5); transition: color .15s, border-color .15s, transform .12s; }
+      #modal-close:hover, .modal-card .x:hover { color: #fff; border-color: var(--gold); }
+      #modal-close:active, .modal-card .x:active { transform: scale(.9); }
+      .verify-ok { color: #7fe07f; } .verify-bad { color: #ff8a8a; }
+      /* countdown to the daily reset */
+      .lb-timer { text-align: center; font: 700 13px "Cinzel", serif; color: var(--dim); margin: 0 0 12px; letter-spacing: .5px; }
+      .lb-timer b { color: var(--gold); font-weight: 800; }
+      /* leaderboard / standings rows — top 3 glow */
+      .lb { display: flex; flex-direction: column; gap: 5px; font-family: "Cinzel", serif; }
+      .lb-row { display: flex; align-items: center; gap: 9px; padding: 7px 11px; border-radius: 9px; font-size: 13px;
+        background: rgba(20,16,9,.45); border: 1px solid rgba(110,85,38,.4); }
+      .lb-rank { flex: none; width: 26px; font-weight: 800; color: var(--dim); text-align: center; }
+      .lb-name { flex: 1; min-width: 0; color: #f0eee8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .lb-score { flex: none; color: #e9cd83; font-weight: 700; }
+      .lb-prize { flex: none; width: 46px; text-align: right; color: #7fe07f; font-weight: 700; }
+      .lb-row.r1 { border-color: #ffcf4d; background: linear-gradient(180deg, rgba(120,90,30,.5), rgba(40,30,10,.55));
+        box-shadow: 0 0 14px rgba(255,200,80,.5), inset 0 0 12px rgba(255,200,80,.2); animation: lbGlow 2.2s ease-in-out infinite; }
+      .lb-row.r1 .lb-name { color: #fff3cf; text-shadow: 0 0 8px rgba(255,210,90,.6); }
+      .lb-row.r2 { border-color: #cfd6e0; background: linear-gradient(180deg, rgba(120,128,140,.35), rgba(30,32,40,.5));
+        box-shadow: 0 0 11px rgba(205,214,224,.42), inset 0 0 10px rgba(205,214,224,.14); }
+      .lb-row.r2 .lb-name { color: #eef2f8; }
+      .lb-row.r3 { border-color: #d49a5e; background: linear-gradient(180deg, rgba(120,80,40,.4), rgba(40,26,12,.5));
+        box-shadow: 0 0 11px rgba(210,140,70,.42), inset 0 0 10px rgba(210,140,70,.16); }
+      .lb-row.r3 .lb-name { color: #ffdcb0; }
+      @keyframes lbGlow { 0%,100%{box-shadow: 0 0 12px rgba(255,200,80,.45), inset 0 0 12px rgba(255,200,80,.18)}
+        50%{box-shadow: 0 0 24px rgba(255,200,80,.85), inset 0 0 16px rgba(255,200,80,.32)} }
+      /* "···" gap when the player's own row is pinned below the top 8 */
+      .lb-sep { text-align: center; color: var(--dim); font: 800 13px "Cinzel", serif; letter-spacing: 4px; margin: 1px 0; }
+      /* the current player's row, highlighted so they can spot themselves */
+      .lb-row.me { border-color: var(--gold); box-shadow: inset 0 0 0 1px var(--gold), 0 0 12px rgba(255,215,120,.35); }
+      .lb-you { font: 800 9px "Cinzel", serif; color: #2a1f08; background: var(--gold); border-radius: 999px;
+        padding: 1px 6px; margin-left: 6px; vertical-align: middle; letter-spacing: .5px; }
+      /* reconnect indicator (shows only after a drop) */
+      .reconnect { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); z-index: 40; display: none;
+        background: linear-gradient(180deg, #7c5417, #4e3410); color: #ffe9b0; border: 1px solid #caa14a; border-radius: 999px;
+        padding: 6px 16px; font: 800 13px "Cinzel", serif; letter-spacing: .5px; box-shadow: 0 4px 14px rgba(0,0,0,.6); }
+      .reconnect.show { display: block; animation: rcPulse 1.2s ease-in-out infinite; }
+      @keyframes rcPulse { 0%,100%{opacity:.65} 50%{opacity:1} }
+      /* volume popover under the sound button */
+      .vol-pop { position: absolute; top: 54px; right: 10px; z-index: 20; display: none; align-items: center; gap: 8px;
+        background: linear-gradient(180deg, rgba(40,33,20,.96), rgba(16,13,8,.97)); border: 1px solid #8a6a2a; border-radius: 12px;
+        padding: 10px 13px; box-shadow: 0 6px 18px rgba(0,0,0,.6); }
+      .vol-pop.show { display: flex; }
+      .vol-pop span { font-size: 14px; }
+      .vol-pop input[type=range] { width: 118px; height: 6px; accent-color: #e9cd83; cursor: pointer; }
+      /* autoplay button (floats right of the bet coins) + config modal */
+      .bets-row { position: relative; display: flex; justify-content: center; align-items: center; }
+      .auto-btn { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); width: 50px; height: 50px; border-radius: 12px;
+        border: 1px solid #8a6a2a; cursor: pointer; color: #e9cd83; font: 800 17px "Cinzel", serif; line-height: 1;
+        background: linear-gradient(180deg, rgba(58,46,26,.9), rgba(22,17,10,.92));
+        box-shadow: inset 0 1px 0 rgba(231,198,106,.25), 0 3px 8px rgba(0,0,0,.45); }
+      .auto-btn:active { transform: translateY(-50%) scale(.92); }
+      .auto-btn.running { color: #fff; border-color: #5e1c12; background: linear-gradient(180deg, #c4452f, #7c2418); animation: autoPulse 1s ease-in-out infinite; }
+      @keyframes autoPulse { 0%,100%{box-shadow: 0 0 10px rgba(220,60,40,.45)} 50%{box-shadow: 0 0 22px rgba(220,60,40,.9)} }
+      .side-btn { position: absolute; left: 6px; top: 50%; transform: translateY(-50%); width: 50px; height: 50px; border-radius: 12px;
+        border: 1px solid #8a6a2a; cursor: pointer; color: #e9cd83; font: 900 24px "Cinzel", serif; font-style: italic; line-height: 1;
+        background: linear-gradient(180deg, rgba(58,46,26,.9), rgba(22,17,10,.92));
+        box-shadow: inset 0 1px 0 rgba(231,198,106,.25), 0 3px 8px rgba(0,0,0,.45); }
+      .side-btn:active { transform: translateY(-50%) scale(.92); }
+      .auto-card { width: 320px; max-width: 90%; }
+      .nf-card { width: 300px; max-width: 90%; text-align: center; }
+      .nf-msg { font-size: 15px; color: var(--txt); margin: 10px 0 6px; line-height: 1.5; }
+      .nf-msg b { color: var(--gold); }
+      /* info screens (tabs) */
+      .info-card { width: 340px; max-width: 92%; max-height: 80%; overflow: auto; padding-top: 50px; } /* clear the close button above the full-width tabs */
+      .tabs { display: flex; gap: 6px; margin: 2px 0 12px; }
+      .tab { flex: 1; padding: 9px 4px; border-radius: 9px; cursor: pointer; font: 800 12px "Cinzel", serif; letter-spacing: .5px;
+        color: #d8c79a; background: linear-gradient(180deg, rgba(46,38,22,.85), rgba(20,16,9,.9)); border: 1px solid #6e5526;
+        box-shadow: inset 0 1px 0 rgba(231,198,106,.16); transition: color .15s, border-color .15s, transform .12s; }
+      .tab:hover { color: #ffe9b0; border-color: #a07d34; }
+      .tab.active { color: #3a2606; border-color: #8a6a2a; text-shadow: 0 1px 0 rgba(255,248,220,.5);
+        background: linear-gradient(180deg, #ffe9a8, #e8c25c 45%, #b8862e);
+        box-shadow: inset 0 1px 0 rgba(255,248,220,.7), inset 0 -2px 4px rgba(120,80,20,.4), 0 2px 6px rgba(0,0,0,.4); }
+      .tab-panel p { margin: 8px 0; font-size: 14px; line-height: 1.5; color: var(--txt); }
+      .tab-panel b { color: var(--gold); } .tab-panel .hint { color: var(--dim); font-size: 12px; }
+      .pt { width: 100%; border-collapse: collapse; margin: 10px 0; }
+      .pt th, .pt td { text-align: left; padding: 5px 8px; border-bottom: 1px solid var(--line); font-size: 13px; }
+      .pt th { color: var(--gold); font-family: "Cinzel", serif; }
+      .info-btn { width: 100%; margin-top: 12px; padding: 12px; border-radius: 9px; cursor: pointer; border: 1px solid #8a6a2a;
+        font: 800 13px "Cinzel", serif; letter-spacing: .5px; color: #3a2606; text-shadow: 0 1px 0 rgba(255,248,220,.5);
+        background: linear-gradient(180deg, #ffe9a8, #e8c25c 45%, #b8862e);
+        box-shadow: inset 0 1px 0 rgba(255,248,220,.7), inset 0 -2px 4px rgba(120,80,20,.4), 0 3px 9px rgba(0,0,0,.5);
+        transition: filter .15s, transform .12s; }
+      .info-btn:hover { filter: brightness(1.06); }
+      .info-btn:active { transform: translateY(1px) scale(.99); }
+      .info-btn.danger { color: #ffe7e2; text-shadow: 0 1px 0 rgba(0,0,0,.5); border-color: #7c2418;
+        background: linear-gradient(180deg, #c4452f, #7c2418);
+        box-shadow: inset 0 1px 0 rgba(255,200,190,.4), inset 0 -2px 4px rgba(60,10,5,.5), 0 3px 9px rgba(0,0,0,.5); }
+      #info-verify-out { white-space: pre-wrap; font-size: 12px; color: #9fe09f; margin: 8px 0 0; }
+      .set-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 14px 0; font: 800 14px "Cinzel", serif; color: #e9cd83; }
+      .set-row input[type=range] { width: 150px; accent-color: #e9cd83; }
+      .seg { display: flex; border: 1px solid #8a6a2a; border-radius: 9px; overflow: hidden; box-shadow: inset 0 1px 0 rgba(231,198,106,.12), 0 2px 6px rgba(0,0,0,.35); }
+      .seg-btn { padding: 8px 15px; border: 0; border-left: 1px solid #5e4a22; cursor: pointer; font: 800 12px "Cinzel", serif; color: #d8c79a;
+        background: linear-gradient(180deg, rgba(46,38,22,.85), rgba(20,16,9,.9)); transition: color .15s, filter .15s; }
+      .seg-btn:first-child { border-left: 0; }
+      .seg-btn:hover { color: #ffe9b0; }
+      .seg-btn.active { color: #3a2606; text-shadow: 0 1px 0 rgba(255,248,220,.5);
+        background: linear-gradient(180deg, #ffe9a8, #e8c25c 45%, #b8862e);
+        box-shadow: inset 0 1px 0 rgba(255,248,220,.6), inset 0 -2px 4px rgba(120,80,20,.4); }
+      /* --- loot reel: a strip of items spins and stops on the item we won --- */
+      /* floats just ABOVE the footer's item slots (anchored to #controls) */
+      .lootreel { position: absolute; left: 50%; bottom: 100%; margin-bottom: 6px; transform: translateX(-50%); z-index: 9; width: 304px; max-width: 92%; display: none; cursor: pointer; }
+      .lootreel.show { display: block; animation: reelIn .25s ease; }
+      @keyframes reelIn { from { opacity: 0; transform: translateX(-50%) translateY(12px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+      .reel-mask { position: relative; overflow: hidden; height: 84px; border-radius: 12px;
+        background: linear-gradient(180deg, rgba(8,6,3,.94), rgba(20,16,9,.94)); border: 1px solid #6e5526;
+        box-shadow: inset 0 2px 10px rgba(0,0,0,.7), inset 0 1px 0 rgba(231,198,106,.14), 0 6px 18px rgba(0,0,0,.55);
+        -webkit-mask-image: linear-gradient(90deg, transparent, #000 16%, #000 84%, transparent);
+                mask-image: linear-gradient(90deg, transparent, #000 16%, #000 84%, transparent); }
+      .reel-track { display: flex; gap: 8px; padding: 9px; will-change: transform; }
+      .reel-tile { position: relative; flex: 0 0 66px; height: 66px; border-radius: 10px; display: grid; place-items: center;
+        background: radial-gradient(circle at 50% 36%, rgba(255,255,255,.07), rgba(0,0,0,.28));
+        border: 1px solid var(--gc, #555); box-shadow: inset 0 0 12px rgba(0,0,0,.5); }
+      /* ★ badge in the corner of a gem tile when an item + star dropped together */
+      .reel-tile .reel-badge { position: absolute; top: 1px; right: 3px; z-index: 2; line-height: 1;
+        font: 900 17px "Cinzel", serif; color: #ffe066; text-shadow: 0 0 6px rgba(255,210,90,.95), 0 1px 1px #000; }
+      .reel-tile img { width: 50px; height: 50px; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,.6)); }
+      .reel-tile.reel-star { background: radial-gradient(circle at 50% 36%, rgba(255,225,140,.4), rgba(60,44,12,.5)); border-color: #ffd766; }
+      .reel-tile.reel-star .rs { font: 900 36px "Cinzel", serif; color: #ffe066; text-shadow: 0 0 12px rgba(255,210,90,.85), 0 1px 0 #000; }
+      .reel-tile.landed { box-shadow: 0 0 18px var(--gc), inset 0 0 12px rgba(0,0,0,.4); animation: tileLand .42s ease; }
+      @keyframes tileLand { 0%{transform: scale(1)} 45%{transform: scale(1.18)} 100%{transform: scale(1.07)} }
+      .reel-marker { position: absolute; left: 50%; top: -5px; bottom: -5px; width: 3px; transform: translateX(-50%); z-index: 3; pointer-events: none;
+        background: linear-gradient(180deg, transparent, var(--gold), var(--gold), transparent); box-shadow: 0 0 12px var(--gold); }
+      .reel-marker::before, .reel-marker::after { content: ""; position: absolute; left: 50%; transform: translateX(-50%); border: 7px solid transparent; }
+      .reel-marker::before { top: -7px; border-top-color: var(--gold); }
+      .reel-marker::after { bottom: -7px; border-bottom-color: var(--gold); }
+      .reel-glow { position: absolute; inset: -8px; border-radius: 16px; z-index: 1; pointer-events: none; opacity: 0;
+        background: radial-gradient(60% 90% at 50% 50%, rgba(231,198,106,.4), transparent 70%); transition: opacity .3s; }
+      .lootreel.lit .reel-glow { opacity: 1; }
+      /* low-fx quality mode: drop the ambient/heavy effects */
+      body.lowfx .embers, body.lowfx .ember { display: none !important; }
+      body.lowfx #stage.shake, body.lowfx #stage.zoom { animation: none !important; }
+      .auto-field { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 12px 0; font-family: "Cinzel", serif; font-size: 13px; color: #e9cd83; }
+      .auto-field input { width: 92px; padding: 9px; border-radius: 8px; border: 1px solid #6e5526; background: #0d0e1c; color: #f3ead6; font-size: 16px; text-align: right;
+        box-shadow: inset 0 2px 5px rgba(0,0,0,.5); outline: none; transition: border-color .15s, box-shadow .15s; }
+      .auto-field input:focus { border-color: var(--gold); box-shadow: inset 0 2px 5px rgba(0,0,0,.5), 0 0 0 2px rgba(231,198,106,.25); }
+      #auto-go { width: 100%; margin-top: 10px; padding: 15px; border: 1px solid #8a6a2a; border-radius: 9px; cursor: pointer;
+        font: 800 17px "Cinzel", serif; letter-spacing: 1.5px; color: #3a2606; text-shadow: 0 1px 0 rgba(255,248,220,.55);
+        background: linear-gradient(180deg, #ffe9a8, #e8c25c 45%, #b8862e);
+        box-shadow: inset 0 1px 0 rgba(255,248,220,.7), inset 0 -2px 5px rgba(120,80,20,.4), 0 4px 12px rgba(0,0,0,.55); transition: filter .15s, transform .12s; }
+      #auto-go:hover { filter: brightness(1.06); }
+      #auto-go:active { transform: translateY(1px) scale(.99); }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <header id="hud">
+        <div class="opp-card">
+          <img id="avatar" alt="" />
+          <div class="labels">
+            <div class="t" id="username" title="Click to change name" style="cursor:pointer">Player</div>
+            <div class="xp"><div class="xp-fill" id="xp-fill"></div><span class="lvl" id="lvl">1</span></div>
+          </div>
+        </div>
+        <div class="bal" id="bal">$1000.00</div>
+        <div class="hud-actions">
+          <button id="leaders" class="icon" title="Leaderboard"><img src="./assets/icon-trophy.png" alt="🏆" /></button>
+          <button id="arena" class="icon" title="Arena"><img src="./assets/icon-swords.png" alt="⚔️" /><span id="rank-num" class="rank-num">#-</span></button>
+          <button id="verify" class="icon" title="Provably fair" disabled><img src="./assets/icon-shield.png" alt="🛡️" /></button>
+          <button id="mute" class="icon sound" title="Sound"><img id="mute-img" src="./assets/btn-sound.png" alt="🔊" /></button>
+        </div>
+      </header>
+      <div id="vol-pop" class="vol-pop">
+        <span>🔈</span><input id="vol-slider" type="range" min="0" max="100" value="80" /><span>🔊</span>
+      </div>
+      <div id="reconnect" class="reconnect">⚔ Reconnecting…</div>
+
+      <main id="stage">
+        <div class="arena-bg"></div>
+        <div class="vignette"></div>
+        <div id="embers" class="embers"></div>
+        <div id="cheer" class="cheer"></div>
+        <div id="round" class="round-badge"><i>ROUND</i><b>1</b></div>
+        <div id="points" class="points">★ 0</div>
+        <div id="lvlup" class="lvlup"></div>
+        <div id="mult" class="mult">x1.00</div>
+
+        <div id="fighters" class="fighters">
+          <div id="player" class="fighter player"><img id="player-img" src="./assets/player-1.png" alt="" /></div>
+          <div id="enemy" class="fighter enemy"><img id="enemy-img" src="./assets/enemy-1.png" alt="" /></div>
+          <div id="spark" class="spark"></div>
+          <div id="sparks" class="sparks"></div>
+        </div>
+
+        <div id="gain" class="gain"></div>
+        <div id="winbanner" class="winbanner"><img id="winbanner-img" alt="" /></div>
+        <div id="roses" class="roses"></div>
+        <div id="blood" class="blood"></div>
+        <div id="stamp" class="stamp"><b></b></div>
+        <div id="flash" class="flash"></div>
+        <div id="coins" class="coins"></div>
+        <div id="status" class="status">connecting…</div>
+      </main>
+
+      <footer id="controls">
+        <div id="lootreel" class="lootreel">
+          <div class="reel-glow"></div>
+          <div class="reel-mask"><div id="reel-track" class="reel-track"></div></div>
+          <div class="reel-marker"></div>
+        </div>
+        <div id="gems" class="gems"></div>
+        <div class="bets-row">
+          <button id="menu" class="side-btn" title="Help & rules">i</button>
+          <div class="bets" id="bets">
+            <button class="chip" data-bet="10">$10</button>
+            <button class="chip active" data-bet="20">$20</button>
+            <button class="chip" data-bet="50">$50</button>
+          </div>
+          <button id="auto-btn" class="auto-btn" title="Autoplay">⚙</button>
+        </div>
+        <button id="cash" class="btn cash" disabled>CASH OUT <b id="cashAmt">$0.00</b></button>
+        <div class="row2">
+          <button id="continue" class="btn bronze" disabled>CONTINUE</button>
+          <button id="start" class="btn steel">START <span class="sp">✦</span></button>
+        </div>
+      </footer>
+
+      <div id="modal" class="modal"><div class="modal-card"><button id="modal-close">✕</button><h3 id="modal-title"></h3><pre id="modal-body"></pre></div></div>
+
+      <div id="auto-modal" class="modal">
+        <div class="modal-card auto-card">
+          <button id="auto-close" class="x">✕</button>
+          <h3>⚙ AUTOPLAY</h3>
+          <div class="auto-field"><span>Rounds</span><input id="auto-rounds" type="number" min="1" max="999" value="10" /></div>
+          <div class="auto-field"><span>Auto cash out at&nbsp;×</span><input id="auto-cash" type="number" min="1.1" step="0.1" value="2" /></div>
+          <div class="auto-field"><span>Stop if balance &lt; $</span><input id="auto-stop" type="number" min="0" step="1" value="0" /></div>
+          <div class="auto-field"><span>Speed</span>
+            <span class="seg" id="auto-speed">
+              <button class="seg-btn active" data-sp="1">×1</button>
+              <button class="seg-btn" data-sp="2">×2</button>
+              <button class="seg-btn" data-sp="3">×3</button>
+            </span>
+          </div>
+          <button id="auto-go">START AUTOPLAY</button>
+        </div>
+      </div>
+
+      <div id="info-modal" class="modal">
+        <div class="modal-card info-card">
+          <button id="info-close" class="x">✕</button>
+          <div class="tabs">
+            <button class="tab active" data-tab="how">How to Play</button>
+            <button class="tab" data-tab="pay">Paytable</button>
+            <button class="tab" data-tab="set">Settings</button>
+          </div>
+          <div class="tab-panel" data-panel="how">
+            <p>⚔️ Fight automated rounds in the arena.</p>
+            <p>🏆 Win a fight - loot raises your <b>multiplier</b>.</p>
+            <p>💰 <b>CASH OUT</b> to bank <i>bet × multiplier</i>, or <b>CONTINUE</b> to risk it for more.</p>
+            <p>☠️ Lose a fight - you <b>bust</b> and lose the bet.</p>
+            <p>★ A win with no better gear gives <b>stars</b> for the Daily Arena (24h leaderboard).</p>
+            <p>📈 Earn XP each round to <b>level up</b> - your gladiator evolves (1→7) and the 2-star chance grows.</p>
+          </div>
+          <div class="tab-panel" data-panel="pay" hidden>
+            <p><b>RTP 96%</b> - the 4% house edge is taken once on the entry fight; every CONTINUE is fair, so strategy can't change the RTP.</p>
+            <table class="pt">
+              <tr><th>Item tier</th><th>Multiplier</th></tr>
+              <tr><td style="color:#c2c8d4">Common</td><td>×1.05</td></tr>
+              <tr><td style="color:#3f9bff">Rare</td><td>×1.15</td></tr>
+              <tr><td style="color:#b94dff">Epic</td><td>×1.35</td></tr>
+              <tr><td style="color:#f2a73b">Legendary</td><td>×1.75</td></tr>
+              <tr><td style="color:#ff6a2a">Mythic</td><td>×2.5</td></tr>
+              <tr><td style="color:#a86bff">Jackpots</td><td>×10 / ×15 / ×25</td></tr>
+            </table>
+            <p>🔁 <b>Stacking</b>: a duplicate of an equipped tier stacks (e.g. Mythic ×2) for its full multiplier.</p>
+            <p>➕ <b>Every win</b> grows the multiplier by at least <b>+2%</b> (even a worse drop).</p>
+            <p>🎯 <b>Max win</b> is capped at <b>×1000</b> your bet.</p>
+            <p>🛡️ <b>Provably fair</b> - each round is derived from serverSeed + clientSeed + nonce.</p>
+            <button id="info-verify" class="info-btn">🛡️ Verify last round</button>
+            <pre id="info-verify-out"></pre>
+          </div>
+          <div class="tab-panel" data-panel="set" hidden>
+            <div class="set-row"><span>🔊 Sound</span><input id="set-vol" type="range" min="0" max="100" value="80" /></div>
+            <div class="set-row"><span>✨ Effects</span>
+              <span class="seg"><button id="fx-high" class="seg-btn active">High</button><button id="fx-low" class="seg-btn">Low</button></span>
+            </div>
+            <p class="hint">Low effects = fewer particles for weaker devices.</p>
+          </div>
+        </div>
+      </div>
+
+      <div id="nofunds-modal" class="modal">
+        <div class="modal-card nf-card">
+          <button id="nf-close" class="x">✕</button>
+          <h3>⚠ OUT OF COINS</h3>
+          <p id="nf-msg" class="nf-msg"></p>
+          <button id="nf-topup" class="info-btn">GET $1000</button>
+          <p class="hint" id="nf-hint"></p>
+        </div>
+      </div>
+    </div>
+
+    <script type="importmap">
+      {
+        "imports": {
+          "gladiator-engine/dist/round.js": "../../engine/dist/round.js",
+          "gladiator-engine/dist/engine.js": "../../engine/dist/engine.js",
+          "gladiator-engine/dist/config.js": "../../engine/dist/config.js",
+          "gladiator-engine/dist/types.js": "../../engine/dist/types.js"
+        }
+      }
+    </script>
+    <script>
+      // PWA: register the network-first service worker (offline shell, no stale cache)
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js").catch(() => {}));
+      }
+    </script>
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>

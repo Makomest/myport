@@ -1,0 +1,28 @@
+# Production storage for the Gladiator backend.
+#   Postgres — durable wallet/ledger, audit, limits, tournaments (db/schema.sql).
+#   Redis    — live round state (the active GladiatorRound per session) + pub/sub
+#              for ops notifications across instances.
+# Bring up:  docker compose up -d   then apply db/schema.sql to Postgres.
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: gladiator
+      POSTGRES_USER: gladiator
+      POSTGRES_PASSWORD: change-me
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
+
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+
+volumes:
+  pgdata:
+  redisdata:

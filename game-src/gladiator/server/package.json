@@ -1,0 +1,42 @@
+{
+  "name": "gladiator-server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Phase-1 backend core — wallet, responsible gaming, round orchestration, WS transport",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "tsc && node run.mjs",
+    "test": "tsc && node test/integration.mjs && node test/persistence.mjs && node test/auth.mjs && node test/jwt.test.mjs && node test/meta.test.mjs && node test/rg.test.mjs && node test/rg-limits.test.mjs && node test/seasons.test.mjs && node test/fraud.test.mjs && node test/tournaments.test.mjs && node test/ops.test.mjs && node test/scheduler.test.mjs && node test/pg-wallet.test.mjs && node test/pg-stores.test.mjs && node test/gameservice-pg.test.mjs && node test/seamless.test.mjs && node test/seamless-http.test.mjs && node test/stateless.test.mjs && node test/security.test.mjs && node test/auth.test.mjs && node test/daily-reset.test.mjs",
+    "test:integration": "tsc && node test/integration.mjs",
+    "test:persist": "tsc && node test/persistence.mjs",
+    "test:auth": "tsc && node test/auth.mjs",
+    "test:jwt": "tsc && node test/jwt.test.mjs",
+    "test:meta": "tsc && node test/meta.test.mjs",
+    "test:rg": "tsc && node test/rg.test.mjs",
+    "test:rg-limits": "tsc && node test/rg-limits.test.mjs",
+    "test:seasons": "tsc && node test/seasons.test.mjs",
+    "test:fraud": "tsc && node test/fraud.test.mjs",
+    "test:tournaments": "tsc && node test/tournaments.test.mjs",
+    "test:ops": "tsc && node test/ops.test.mjs",
+    "test:scheduler": "tsc && node test/scheduler.test.mjs",
+    "test:pg": "tsc && node test/pg-wallet.test.mjs",
+    "test:pg-stores": "tsc && node test/pg-stores.test.mjs",
+    "test:pg-gameservice": "tsc && node test/gameservice-pg.test.mjs",
+    "ws": "tsc && node test/ws-smoke.mjs"
+  },
+  "dependencies": {
+    "gladiator-engine": "file:../engine",
+    "pg": "^8.21.0",
+    "redis": "^4.7.0",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.2",
+    "@types/pg": "^8.20.0",
+    "@types/ws": "^8.5.12",
+    "pg-mem": "^3.0.14",
+    "typescript": "^6.0.3"
+  }
+}

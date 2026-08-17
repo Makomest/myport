@@ -1,0 +1,51 @@
+# Run the whole game locally:  docker compose up --build
+# then open  http://localhost:3000/client/web/index.html
+services:
+  app:
+    build: .
+    image: gladiator
+    container_name: gladiator
+    ports:
+      - "8790:8790" # WebSocket game server
+      - "3000:3000" # web client
+    environment:
+      # durable storage — comment this out to fall back to in-memory stores
+      DATABASE_URL: postgres://gladiator:gladiator@postgres:5432/gladiator
+      REDIS_URL: redis://redis:6379 # reserved (stateless round storage / scaling)
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16
+    container_name: gladiator-pg
+    environment:
+      POSTGRES_DB: gladiator
+      POSTGRES_USER: gladiator
+      POSTGRES_PASSWORD: gladiator
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gladiator -d gladiator"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+    restart: unless-stopped
+
+  redis:
+    image: redis:7
+    container_name: gladiator-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  redisdata:

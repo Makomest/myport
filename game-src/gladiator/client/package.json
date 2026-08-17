@@ -1,0 +1,29 @@
+{
+  "name": "gladiator-client",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Phase-2 client core — typed WS GameClient + portable provably-fair verifier",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "tsc && node test/replay.test.mjs && node test/e2e.mjs && node test/meta-e2e.mjs && node test/rg-e2e.mjs && node test/seasons-e2e.mjs && node test/limits-e2e.mjs && node test/tournaments-e2e.mjs",
+    "replay": "tsc && node test/replay.test.mjs",
+    "e2e": "tsc && node test/e2e.mjs",
+    "meta-e2e": "tsc && node test/meta-e2e.mjs",
+    "rg-e2e": "tsc && node test/rg-e2e.mjs",
+    "seasons-e2e": "tsc && node test/seasons-e2e.mjs",
+    "limits-e2e": "tsc && node test/limits-e2e.mjs",
+    "tournaments-e2e": "tsc && node test/tournaments-e2e.mjs"
+  },
+  "dependencies": {
+    "gladiator-engine": "file:../engine"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.2",
+    "@types/ws": "^8.5.12",
+    "typescript": "^6.0.3",
+    "ws": "^8.18.0"
+  }
+}

@@ -33,3 +33,7 @@ assets/redlinerush-d9f1fc45a4efb18d96e9/assets/bg-landscape1.png
 *.pem
 *.key
 id_rsa*
+
+# Game build artifacts and secrets
+game-src/**/node_modules/
+game-src/**/.env
