@@ -33,8 +33,7 @@ window.RONI_GAMES = [
     features: ["Cash-out", "Loot reel", "Stacking multipliers", "Daily Arena", "Provably fair"],
     demoUrl: "https://play.ronigames.org/client/web/index.html",
     sheet: "assets/glad/GAME-SHEET.en.html",
-    // Hidden from the public site. Reachable only via /game/gladiator-8df189fe1030b111
-    hidden: true
+    hidden: false
   },
   {
     slug: "redline-rush-a9c84db8266ed07a",
