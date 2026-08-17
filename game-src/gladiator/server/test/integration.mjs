@@ -130,6 +130,7 @@ console.log("=".repeat(64));
   const svc = new GameService(w, rg, fixedSeeds());
   const first = await svc.openRound("gwen", 10, "s", "g1");
   ok(first.realityCheckDue === false, "no reality check at session start");
+  if (!first.ended) await svc.cashOut(first.roundId, "g1-cash", "gwen"); // one live round per account
   now += 1500; // advance past the interval
   const second = await svc.openRound("gwen", 10, "s", "g2");
   ok(second.realityCheckDue === true, "reality check becomes due after the interval");

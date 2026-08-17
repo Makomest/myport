@@ -198,6 +198,14 @@ export class GameClient {
         s.balance = m.balance; s.error = undefined; s.errorCode = undefined;
         break;
       case "error":
+        // A ConflictError means the server rejected a duplicate action (double click,
+        // autoplay racing a manual press). The round it rejected never happened, so the
+        // state we already hold is still correct — tearing it down would be the bug.
+        if (m.error === "ConflictError") {
+          s.errorCode = m.error;
+          this.resume(); // `open` already moved us to "opening"; re-sync to what the server really has
+          break;
+        }
         s.phase = "error"; s.error = m.message ?? m.error; s.errorCode = m.error;
         break;
     }

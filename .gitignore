@@ -37,3 +37,4 @@ id_rsa*
 # Game build artifacts and secrets
 game-src/**/node_modules/
 game-src/**/.env
+game-src/**/dist/

@@ -312,6 +312,14 @@
       @keyframes zoomPulse { 0%{transform: scale(1)} 30%{transform: scale(1.045)} 100%{transform: scale(1)} }
       .icon.sound { font-size: 18px; }
 
+      /* visually hidden, still read out by assistive tech */
+      .sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden;
+        clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; border: 0; }
+      .auto-err { display: block; margin-top: 3px; font-style: normal; font-size: 11px; color: #ff8a6b; min-height: 13px; }
+      .auto-field input.invalid { border-color: #ff8a6b; box-shadow: 0 0 0 1px rgba(255,138,107,.5); }
+      #auto-go:disabled { opacity: .5; cursor: not-allowed; }
+      #vol-out { min-width: 34px; font: 700 11px "Cinzel", serif; color: var(--gold); text-align: right; }
+
       /* CONTROLS */
       #controls { position: absolute; left: 0; right: 0; bottom: 0; display: flex; flex-direction: column; gap: 10px; z-index: 6;
         padding: 10px max(14px, env(safe-area-inset-right)) max(16px, calc(12px + env(safe-area-inset-bottom))) max(14px, env(safe-area-inset-left));
@@ -538,9 +546,10 @@
         </div>
       </header>
       <div id="vol-pop" class="vol-pop">
-        <span>🔈</span><input id="vol-slider" type="range" min="0" max="100" value="80" /><span>🔊</span>
+        <span>🔈</span><input id="vol-slider" type="range" min="0" max="100" value="80" aria-label="Volume" /><output id="vol-out" for="vol-slider">80%</output><span>🔊</span>
       </div>
       <div id="reconnect" class="reconnect">⚔ Reconnecting…</div>
+      <div id="live" class="sr-only" role="status" aria-live="polite"></div>
 
       <main id="stage">
         <div class="arena-bg"></div>
@@ -579,9 +588,9 @@
         <div class="bets-row">
           <button id="menu" class="side-btn" title="Help & rules">i</button>
           <div class="bets" id="bets">
-            <button class="chip" data-bet="10">$10</button>
-            <button class="chip active" data-bet="20">$20</button>
-            <button class="chip" data-bet="50">$50</button>
+            <button class="chip" data-bet="10" aria-pressed="false">$10</button>
+            <button class="chip active" data-bet="20" aria-pressed="true">$20</button>
+            <button class="chip" data-bet="50" aria-pressed="false">$50</button>
           </div>
           <button id="auto-btn" class="auto-btn" title="Autoplay">⚙</button>
         </div>
@@ -598,9 +607,9 @@
         <div class="modal-card auto-card">
           <button id="auto-close" class="x">✕</button>
           <h3>⚙ AUTOPLAY</h3>
-          <div class="auto-field"><span>Rounds</span><input id="auto-rounds" type="number" min="1" max="999" value="10" /></div>
-          <div class="auto-field"><span>Auto cash out at&nbsp;×</span><input id="auto-cash" type="number" min="1.1" step="0.1" value="2" /></div>
-          <div class="auto-field"><span>Stop if balance &lt; $</span><input id="auto-stop" type="number" min="0" step="1" value="0" /></div>
+          <div class="auto-field"><span>Rounds</span><input id="auto-rounds" type="number" min="1" max="999" value="10" aria-describedby="auto-rounds-err" /><em class="auto-err" id="auto-rounds-err"></em></div>
+          <div class="auto-field"><span>Auto cash out at&nbsp;×</span><input id="auto-cash" type="number" min="1.1" step="0.1" value="2" aria-describedby="auto-cash-err" /><em class="auto-err" id="auto-cash-err"></em></div>
+          <div class="auto-field"><span>Stop if balance &lt; $</span><input id="auto-stop" type="number" min="0" step="1" value="0" aria-describedby="auto-stop-err" /><em class="auto-err" id="auto-stop-err"></em></div>
           <div class="auto-field"><span>Speed</span>
             <span class="seg" id="auto-speed">
               <button class="seg-btn active" data-sp="1">×1</button>

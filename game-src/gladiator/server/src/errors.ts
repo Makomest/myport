@@ -22,3 +22,10 @@ export class InvalidStateError extends Error {
     this.name = "InvalidStateError";
   }
 }
+/** A second money-moving action arrived while one was already running for this account. */
+export class ConflictError extends Error {
+  constructor(msg: string) {
+    super(msg);
+    this.name = "ConflictError";
+  }
+}

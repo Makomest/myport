@@ -446,6 +446,8 @@ const Sfx = (() => {
   };
 })();
 const vibe = (p) => { try { navigator.vibrate && navigator.vibrate(p); } catch {} };
+// Speak a state change that is otherwise only shown through artwork.
+const announce = (msg) => { const r = $("live"); if (r) r.textContent = msg; };
 // Browser autoplay policy blocks audio until a gesture - so start the music/ambient
 // on the FIRST interaction of ANY kind (tap/click/key), not just the START button.
 const startAudioOnce = () => {
@@ -534,7 +536,8 @@ function throwRoses(n) {
 }
 
 // --- controls ---
-let currentBet = 20, roundBet = 0, lastBalance = 1000;
+const betKey = "gladiator-bet";
+let currentBet = Number(localStorage.getItem(betKey)) || 20, roundBet = 0, lastBalance = 1000;
 // Daily Arena: dailyStars = committed (server) total over 24h; runStars = this run (provisional)
 let dailyStars = 0, dailyRank = 0, runStars = 0, rankRefreshed = false;
 const auto = { on: false, left: 0, cashAt: 2, stopBelow: 0 };
@@ -620,6 +623,7 @@ async function animateFight(from, ev) {
     showWinBanner("defeat");
     spawnBlood(9);
     onPaint(() => { Sfx.bust(); vibe(160); });
+    announce(`Defeat - you lost ${fmtMoney(roundBet || currentBet)}. Press START for a new game.`);
     await sleep(1000);
   }
 }
@@ -658,6 +662,7 @@ function resetStage() {
   el.player.classList.remove("dead");
   curStage = 1; el.playerImg.src = `${A}player-1.png`; el.enemyImg.src = `${A}enemy-1.png`;
   el.stamp.classList.remove("show"); el.coins.innerHTML = "";
+  el.gain.textContent = ""; el.gain.classList.remove("go");
   $("roses").innerHTML = ""; $("blood").innerHTML = ""; $("winbanner").classList.remove("go", "defeat");
 }
 
@@ -704,8 +709,14 @@ function autoKick() {
     if ((s.multiplier || 1) >= auto.cashAt) client.cashOut();
     else client.continue();
   } else {
+    const bal = typeof s.balance === "number" ? s.balance : lastBalance;
+    if (auto.stopBelow > 0 && bal < auto.stopBelow) { autoStop(); return showAutoStopped(auto.stopBelow); }
+    if (currentBet > bal + 1e-9) { autoStop(); return showNoFunds(); }
     client.open(currentBet); // idle / ended -> start next round
   }
+}
+function showAutoStopped(limit) {
+  el.status.textContent = `Autoplay stopped - balance is below ${fmtMoney(limit)}`;
 }
 function afterAnim() {
   if (animating) return;
@@ -854,26 +865,38 @@ $("nf-topup").onclick = () => { Sfx.click(); Sfx.resume(); client.topUp(); };
 $("start").onclick = () => {
   Sfx.resume(); Sfx.click();
   if (currentBet > lastBalance + 1e-9) return showNoFunds(); // can't afford - prompt instead of a dead error
+  lock(); // before the send, not after the reply: the second click of a double must find a dead button
   client.open(currentBet);
 };
-$("continue").onclick = () => { Sfx.click(); client.continue(); };
-$("cash").onclick = () => { Sfx.click(); client.cashOut(); };
+$("continue").onclick = () => { Sfx.click(); lock(); client.continue(); };
+$("cash").onclick = () => { Sfx.click(); lock(); client.cashOut(); };
+function paintChips() {
+  for (const c of document.querySelectorAll("#bets .chip")) {
+    const on = Number(c.dataset.bet) === currentBet;
+    c.classList.toggle("active", on);
+    c.setAttribute("aria-pressed", on ? "true" : "false"); // survives disabled/animation states
+  }
+}
 for (const chip of document.querySelectorAll("#bets .chip")) {
   chip.onclick = () => {
     if ($("bets").style.opacity === "0.4") return;
     Sfx.coinSelect();
-    document.querySelectorAll("#bets .chip").forEach((c) => c.classList.remove("active"));
-    chip.classList.add("active"); currentBet = Number(chip.dataset.bet);
+    currentBet = Number(chip.dataset.bet);
+    localStorage.setItem(betKey, String(currentBet));
+    paintChips();
   };
 }
+paintChips(); // reflect the stored stake on load, so the highlight cannot disagree with currentBet
 
 // sound: bronze medallion icon opens a volume slider popover (0 = mute, else quieter/louder)
 const muteBtn = $("mute"), muteImg = $("mute-img"), volPop = $("vol-pop"), volSlider = $("vol-slider");
 const setMuteIcon = () => (muteImg.src = A + (Sfx.muted ? "btn-soundmute.png" : "btn-sound.png"));
 volSlider.value = Math.round(Sfx.volume * 100);
+paintVol();
 setMuteIcon();
 muteBtn.onclick = (e) => { e.stopPropagation(); Sfx.resume(); Sfx.toggle(); volPop.classList.toggle("show"); };
-volSlider.oninput = () => { Sfx.setVolume(volSlider.value / 100); setMuteIcon(); };
+const paintVol = () => { const o = $("vol-out"); if (o) o.textContent = Math.round(Sfx.volume * 100) + "%"; };
+volSlider.oninput = () => { Sfx.setVolume(volSlider.value / 100); setMuteIcon(); paintVol(); };
 volSlider.onchange = () => { if (!Sfx.muted) Sfx.toggle(); };
 volPop.onclick = (e) => e.stopPropagation();
 document.addEventListener("click", () => volPop.classList.remove("show"));
@@ -889,11 +912,35 @@ const speedSeg = $("auto-speed");
 function paintSpeed() { for (const b of speedSeg.children) b.classList.toggle("active", +b.dataset.sp === autoSpeedSel); }
 for (const b of speedSeg.children) b.onclick = () => { autoSpeedSel = +b.dataset.sp; localStorage.setItem("gladiator-autospeed", String(autoSpeedSel)); paintSpeed(); Sfx.click(); };
 paintSpeed();
+function readAutoForm() {
+  const num = (id) => { const v = parseFloat($(id).value); return Number.isFinite(v) ? v : NaN; };
+  const rounds = num("auto-rounds"), cashAt = num("auto-cash"), stopAt = $("auto-stop").value.trim() === "" ? 0 : num("auto-stop");
+  const errs = [];
+  if (!Number.isInteger(rounds) || rounds < 1 || rounds > 999) errs.push(["auto-rounds", "1-999 rounds"]);
+  if (!(cashAt >= 1.01)) errs.push(["auto-cash", "at least x1.01"]);
+  if (!(stopAt >= 0)) errs.push(["auto-stop", "0 or more"]);
+  return { rounds, cashAt, stopAt, errs };
+}
+function paintAutoErrors() {
+  const { errs } = readAutoForm();
+  const bad = new Map(errs);
+  for (const id of ["auto-rounds", "auto-cash", "auto-stop"]) {
+    const field = $(id);
+    field.classList.toggle("invalid", bad.has(id));
+    field.setAttribute("aria-invalid", bad.has(id) ? "true" : "false");
+    const hint = $(id + "-err");
+    if (hint) hint.textContent = bad.get(id) || "";
+  }
+  $("auto-go").disabled = errs.length > 0;
+}
+for (const id of ["auto-rounds", "auto-cash", "auto-stop"]) $(id).addEventListener("input", paintAutoErrors);
 $("auto-go").onclick = () => {
-  const r = Math.max(1, Math.min(999, parseInt($("auto-rounds").value, 10) || 10));
-  const k = Math.max(1.01, parseFloat($("auto-cash").value) || 2);
-  const sb = Math.max(0, parseFloat($("auto-stop").value) || 0);
-  autoStart(r, k, sb, autoSpeedSel);
+  const { rounds, cashAt, stopAt, errs } = readAutoForm();
+  if (errs.length) return paintAutoErrors();
+  // BUG-004: the stop-balance was only consulted after a round finished, so autoplay
+  // always got one bet in even when it was already under the limit.
+  if (stopAt > 0 && lastBalance < stopAt) { autoModal.classList.remove("show"); return showAutoStopped(stopAt); }
+  autoStart(rounds, cashAt, stopAt, autoSpeedSel);
 };
 updateAutoBtn();
 

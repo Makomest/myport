@@ -8,9 +8,10 @@
   "scripts": {
     "build": "tsc",
     "start": "tsc && node run.mjs",
-    "test": "tsc && node test/integration.mjs && node test/persistence.mjs && node test/auth.mjs && node test/jwt.test.mjs && node test/meta.test.mjs && node test/rg.test.mjs && node test/rg-limits.test.mjs && node test/seasons.test.mjs && node test/fraud.test.mjs && node test/tournaments.test.mjs && node test/ops.test.mjs && node test/scheduler.test.mjs && node test/pg-wallet.test.mjs && node test/pg-stores.test.mjs && node test/gameservice-pg.test.mjs && node test/seamless.test.mjs && node test/seamless-http.test.mjs && node test/stateless.test.mjs && node test/security.test.mjs && node test/auth.test.mjs && node test/daily-reset.test.mjs",
+    "test": "tsc && node test/integration.mjs && node test/persistence.mjs && node test/auth.mjs && node test/jwt.test.mjs && node test/meta.test.mjs && node test/rg.test.mjs && node test/rg-limits.test.mjs && node test/seasons.test.mjs && node test/fraud.test.mjs && node test/tournaments.test.mjs && node test/ops.test.mjs && node test/scheduler.test.mjs && node test/pg-wallet.test.mjs && node test/pg-stores.test.mjs && node test/gameservice-pg.test.mjs && node test/seamless.test.mjs && node test/seamless-http.test.mjs && node test/stateless.test.mjs && node test/security.test.mjs && node test/auth.test.mjs && node test/daily-reset.test.mjs && node test/concurrency.test.mjs",
     "test:integration": "tsc && node test/integration.mjs",
     "test:persist": "tsc && node test/persistence.mjs",
+    "test:concurrency": "tsc && node test/concurrency.test.mjs",
     "test:auth": "tsc && node test/auth.mjs",
     "test:jwt": "tsc && node test/jwt.test.mjs",
     "test:meta": "tsc && node test/meta.test.mjs",

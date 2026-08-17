@@ -9,7 +9,8 @@ import type { RoundDescriptor, RoundStore } from "./roundStore.js";
 /** Minimal client surface (node-redis v4 / ioredis both satisfy it). */
 export interface RedisLike {
   get(key: string): Promise<string | null>;
-  set(key: string, value: string, opts?: { EX?: number }): Promise<unknown>;
+  /** NX + PX are used for the per-account lock; node-redis v4 option names. */
+  set(key: string, value: string, opts?: { EX?: number; PX?: number; NX?: boolean }): Promise<unknown>;
   del(key: string | string[]): Promise<unknown>;
 }
 
@@ -23,6 +24,7 @@ export class RedisRoundStore implements RoundStore {
   private kRound(id: string) { return `${this.prefix}round:${id}`; }
   private kAcct(a: string) { return `${this.prefix}acct:${a}`; }
   private kIdem(k: string) { return `${this.prefix}idem:${k}`; }
+  private kLock(k: string) { return `${this.prefix}lock:${k}`; }
 
   async save(d: RoundDescriptor): Promise<void> {
     const json = JSON.stringify(d);
@@ -49,5 +51,14 @@ export class RedisRoundStore implements RoundStore {
   }
   async setIdem(key: string, value: string): Promise<void> {
     await this.redis.set(this.kIdem(key), value, { EX: this.ttlSeconds });
+  }
+
+  /** SET NX PX — the whole fleet contends for the same key, so the lock spans instances. */
+  async lock(key: string, ttlMs: number): Promise<boolean> {
+    const res = await this.redis.set(this.kLock(key), "1", { NX: true, PX: ttlMs });
+    return res !== null;
+  }
+  async unlock(key: string): Promise<void> {
+    await this.redis.del(this.kLock(key));
   }
 }

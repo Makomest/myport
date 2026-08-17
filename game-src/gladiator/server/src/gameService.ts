@@ -10,7 +10,7 @@ import { ResponsibleGaming, type RgStatus, type PlayerSetLimits } from "./respon
 import { SeedManager, type SeedCommit } from "./seeds.js";
 import { deriveOpponent } from "./opponent.js";
 import type { OpenRoundResult, FightResult, CashOutDto } from "./types.js";
-import { RgBlockedError, RoundNotFoundError, InvalidStateError } from "./errors.js";
+import { RgBlockedError, RoundNotFoundError, InvalidStateError, ConflictError } from "./errors.js";
 import { NullAudit, type AuditSink } from "./audit.js";
 import { InMemoryRoundStore, type RoundDescriptor, type RoundStore } from "./persistence/roundStore.js";
 
@@ -95,9 +95,36 @@ export class GameService {
     return levelFromRounds(this.rg.status(account).rounds);
   }
 
+  /**
+   * Serialise everything that can move money for one account. Two rapid START or
+   * CONTINUE clicks arrive as two frames with different idempotency keys, so
+   * per-operation idempotency does not cover them: without this, both passed the
+   * "is a round open?" check and both debited a stake.
+   */
+  private async withAccountLock<T>(account: string, fn: () => Promise<T>): Promise<T> {
+    const key = `acct:${account}`;
+    if (!(await this.store.lock(key, 15_000))) throw new ConflictError("another action is already in flight");
+    try {
+      return await fn();
+    } finally {
+      await this.store.unlock(key);
+    }
+  }
+
   async openRound(account: string, bet: number, clientSeed: string, idemKey: string): Promise<OpenRoundResult> {
     const cached = await this.store.getIdem(`open:${idemKey}`);
     if (cached) return JSON.parse(cached) as OpenRoundResult; // whole-operation idempotency (cross-instance)
+    return this.withAccountLock(account, () => this.openRoundLocked(account, bet, clientSeed, idemKey));
+  }
+
+  private async openRoundLocked(account: string, bet: number, clientSeed: string, idemKey: string): Promise<OpenRoundResult> {
+    const cached = await this.store.getIdem(`open:${idemKey}`); // re-check: a racing twin may have finished while we waited
+    if (cached) return JSON.parse(cached) as OpenRoundResult;
+
+    // One live round per account — the store index assumes it, and a second
+    // stake here is money the player can never cash out.
+    const live = await this.store.byAccount(account);
+    if (live) throw new ConflictError("a round is already in progress");
 
     const decision = this.rg.check(account, bet);
     if (!decision.ok) throw new RgBlockedError(decision.reason ?? "blocked");
@@ -148,6 +175,11 @@ export class GameService {
   }
 
   async continueRound(roundId: string, account?: string): Promise<FightResult> {
+    const acct = account ?? (await this.mustLoad(roundId)).account;
+    return this.withAccountLock(acct, () => this.continueRoundLocked(roundId, account));
+  }
+
+  private async continueRoundLocked(roundId: string, account?: string): Promise<FightResult> {
     const d = await this.mustLoad(roundId, account);
     const round = this.reconstruct(d);
     if (round.phase !== "decision") throw new InvalidStateError("round not awaiting a decision");
@@ -167,6 +199,13 @@ export class GameService {
   }
 
   async cashOut(roundId: string, idemKey: string, account?: string): Promise<CashOutDto> {
+    const cached = await this.store.getIdem(`cash:${idemKey}`);
+    if (cached) return JSON.parse(cached) as CashOutDto;
+    const acct = account ?? (await this.mustLoad(roundId)).account;
+    return this.withAccountLock(acct, () => this.cashOutLocked(roundId, idemKey, account));
+  }
+
+  private async cashOutLocked(roundId: string, idemKey: string, account?: string): Promise<CashOutDto> {
     const cached = await this.store.getIdem(`cash:${idemKey}`);
     if (cached) return JSON.parse(cached) as CashOutDto;
 
@@ -211,7 +250,7 @@ export class GameService {
       bet: d.bet,
       opponent: deriveOpponent(d.commit.serverSeed, d.commit.clientSeed, d.commit.nonce),
       multiplier: round.multiplier,
-      roundIndex: round.roundsPlayed,
+      roundIndex: Math.max(0, round.roundsPlayed - 1), // 0-based, matching FightEvent.roundIndex
       slots: round.equipped.map((s) => ({ tier: s.tier, count: s.count })),
       balance: await this.wallet.balance(account),
     };
