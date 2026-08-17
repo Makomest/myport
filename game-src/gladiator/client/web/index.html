@@ -27,8 +27,15 @@
       body { background: #000 url(./assets/BGsecond.png) center center / cover no-repeat; }
       /* default scale = the 125% look the design was tuned at (desktop / wide) */
       body { zoom: 1.25; }
+      /* #app is the size container: every HUD/control size below is expressed in cqw, i.e.
+         a share of the play column (max 480px), so a phone and a desktop get the same
+         proportions instead of the column being sized off the whole window. */
       #app { position: relative; width: 100%; max-width: 480px; margin: 0 auto; height: calc(100dvh / 1.25); min-height: calc(100vh / 1.25);
-        background: var(--bg); display: flex; flex-direction: column; overflow: hidden; }
+        background: var(--bg); display: flex; flex-direction: column; overflow: hidden;
+        container-type: inline-size;
+        --card-h: clamp(50px, 14cqw, 67px);
+        --hud-pad: max(10px, env(safe-area-inset-top, 0px));
+        --hud-h: calc(var(--hud-pad) + var(--card-h) + 10px); }
       /* phones: drop the extra zoom (the viewport is already the right size) and fill the screen edge-to-edge */
       @media (max-width: 560px) {
         body { zoom: 1; }
@@ -36,22 +43,22 @@
       }
 
       /* HUD */
-      #hud { position: absolute; top: 0; left: 0; right: 0; display: flex; align-items: center; gap: 8px; z-index: 6;
+      #hud { position: absolute; top: 0; left: 0; right: 0; display: flex; align-items: center; gap: clamp(3px, 1.7cqw, 8px); z-index: 6;
         padding: max(10px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) 10px max(10px, env(safe-area-inset-left)); }
       /* player plaque - frame-player.png asset; avatar sits in the ring hole.
          Brown panel backing is baked into the same background stack so it can never escape the frame. */
       /* new frame-player.png is 467x190: panel fully opaque (no backing needed), ring hole x34-176 y27-162 */
-      .opp-card { position: relative; width: 165px; height: 67px; flex: none; }
+      .opp-card { position: relative; width: clamp(88px, 32cqw, 165px); height: var(--card-h); flex: none; }
       .opp-card::after { content: ""; position: absolute; inset: 0; pointer-events: none;
         background: url(./assets/frame-player.png) 0 0 / 100% 100% no-repeat; }
-      #avatar { position: absolute; left: 13px; top: 10px; width: 48px; height: 48px; border-radius: 50%; object-fit: cover; }
+      #avatar { position: absolute; left: 8%; top: 15%; width: 29%; height: 72%; border-radius: 50%; object-fit: cover; }
       #avatar.levelup { animation: avLevel .9s ease; }
       @keyframes avLevel { 0%,100%{filter: none; transform: scale(1)} 32%{filter: brightness(1.8) drop-shadow(0 0 12px rgba(255,215,120,.95)); transform: scale(1.16)} }
       .labels { position: absolute; left: 44%; right: 9%; top: 50%; transform: translateY(-50%); z-index: 1; }
-      .labels .t { font-family: "Cinzel", serif; font-weight: 800; font-size: 13px; line-height: 1.1; color: #f3ead6;
+      .labels .t { font-family: "Cinzel", serif; font-weight: 800; font-size: clamp(10px, 2.8cqw, 13px); line-height: 1.1; color: #f3ead6;
         max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: 4px; }
       /* XP bar with the level badge at the end of the track (kept inside the panel) */
-      .xp { position: relative; height: 6px; margin-right: 17px; border-radius: 999px; background: rgba(8,5,2,.6); border: 1px solid #5e4a22; box-shadow: inset 0 1px 2px rgba(0,0,0,.55); }
+      .xp { position: relative; height: clamp(4px, 1.3cqw, 6px); margin-right: 11%; border-radius: 999px; background: rgba(8,5,2,.6); border: 1px solid #5e4a22; box-shadow: inset 0 1px 2px rgba(0,0,0,.55); }
       .xp-fill { height: 100%; width: 0; border-radius: 999px; background: linear-gradient(90deg, #ffe08a, #d4a94e);
         box-shadow: 0 0 6px rgba(231,198,106,.55); transition: width .6s cubic-bezier(.3,.7,.3,1); }
       .lvl { position: absolute; right: -16px; top: 50%; transform: translateY(-50%); min-width: 12px; text-align: center; line-height: 1;
@@ -59,11 +66,11 @@
         border: 1px solid #8a6a2a; border-radius: 999px; padding: 2px 3px; box-shadow: 0 1px 3px rgba(0,0,0,.5); }
       /* right-aligned; can shrink (ellipsis) so a huge balance never pushes the icons off-screen.
          Numbers are compact-formatted in JS (K/M/B), so ellipsis is only a last-resort safety. */
-      .bal { margin-left: auto; flex: 0 1 auto; min-width: 0; max-width: 46%; text-align: right; white-space: nowrap;
-        overflow: hidden; text-overflow: ellipsis; font-weight: 700; font-size: 23px; color: #e9cd83;
+      .bal { margin-left: auto; flex: 0 1 auto; min-width: 0; max-width: 52%; text-align: right; white-space: nowrap;
+        overflow: hidden; text-overflow: ellipsis; font-weight: 700; font-size: clamp(11px, 4.5cqw, 23px); color: #e9cd83;
         text-shadow: 0 1px 2px #000, 0 0 16px rgba(231,198,106,.4); }
-      .hud-actions { display: flex; gap: 5px; flex: none; }
-      .icon { position: relative; width: 36px; height: 36px; border-radius: 9px; border: 1px solid #8a6a2a; cursor: pointer;
+      .hud-actions { display: flex; gap: clamp(2px, 1.1cqw, 5px); flex: none; }
+      .icon { position: relative; width: clamp(24px, 7.5cqw, 36px); height: clamp(24px, 7.5cqw, 36px); border-radius: 9px; border: 1px solid #8a6a2a; cursor: pointer;
         background: linear-gradient(180deg, rgba(58,46,26,.85), rgba(22,17,10,.9));
         box-shadow: inset 0 1px 0 rgba(231,198,106,.25), 0 3px 8px rgba(0,0,0,.45);
         display: grid; place-items: center; }
@@ -75,7 +82,7 @@
       .rank-num.down { animation: rankDown .8s ease; }
       @keyframes rankUp { 0%,100%{color: var(--gold); transform: translateX(-50%) scale(1)} 35%{color: #7fe07f; transform: translateX(-50%) scale(1.32); filter: drop-shadow(0 0 8px rgba(127,224,127,.85))} }
       @keyframes rankDown { 0%,100%{color: var(--gold); transform: translateX(-50%) scale(1)} 35%{color: #ff8a6b; transform: translateX(-50%) scale(1.32); filter: drop-shadow(0 0 8px rgba(255,90,60,.85))} }
-      .icon img { width: 20px; height: 20px; object-fit: contain; }
+      .icon img { width: 56%; height: 56%; object-fit: contain; }
       /* sound medallion asset is its own full button face */
       .icon.sound { border: 0; background: none; box-shadow: none; }
       .icon.sound img { width: 34px; height: 34px; }
@@ -90,7 +97,7 @@
         background: radial-gradient(120% 60% at 50% 38%, transparent 40%, rgba(0,0,0,.45) 100%); }
 
       /* sits right above the fighters (same anchor math as .fighters) */
-      .mult { position: absolute; bottom: calc(330px + clamp(260px, 44%, 460px)); left: 0; right: 0; text-align: center; z-index: 4; font-size: 72px; font-weight: 700; letter-spacing: 0;
+      .mult { position: absolute; top: calc(var(--hud-h) + clamp(2px, 1.2cqw, 8px)); left: 0; right: 0; text-align: center; z-index: 4; font-size: clamp(42px, 15cqw, 72px); font-weight: 700; letter-spacing: 0;
         font-family: "EB Garamond", Georgia, serif;
         background: linear-gradient(180deg, #fdf3cd 0%, #efd388 30%, #d4a94e 60%, #9a6f24 100%);
         -webkit-background-clip: text; background-clip: text; color: transparent;
@@ -99,12 +106,12 @@
       @keyframes pop { 0%{transform:scale(1)} 40%{transform:scale(1.22)} 100%{transform:scale(1)} }
 
       /* ROUND - banner-round.png pennant asset, number overlaid on the cloth */
-      .round-badge { position: absolute; top: 11%; left: 10px; z-index: 5; width: 106px; height: 162px; text-align: center;
+      .round-badge { position: absolute; top: 11%; left: clamp(4px, 2cqw, 10px); z-index: 5; width: clamp(74px, 22cqw, 106px); aspect-ratio: 106 / 162; height: auto; text-align: center;
         font-family: "Cinzel", serif; background: url(./assets/banner-round.png) center / contain no-repeat;
         filter: drop-shadow(0 4px 8px rgba(0,0,0,.45)); }
-      .round-badge i { position: absolute; left: 0; right: 0; top: 25%; font-style: normal; font-size: 14px; letter-spacing: 2px; font-weight: 900; color: #4a4338;
+      .round-badge i { position: absolute; left: 0; right: 0; top: 25%; font-style: normal; font-size: clamp(10px, 2.9cqw, 14px); letter-spacing: 2px; font-weight: 900; color: #4a4338;
         text-shadow: 0 1px 0 rgba(255,255,255,.35); }
-      .round-badge b { position: absolute; left: 0; right: 0; top: 36%; font-size: 38px; line-height: 1; font-weight: 900; color: #3e372c;
+      .round-badge b { position: absolute; left: 0; right: 0; top: 36%; font-size: clamp(26px, 7.9cqw, 38px); line-height: 1; font-weight: 900; color: #3e372c;
         text-shadow: 0 1px 0 rgba(255,255,255,.4); transition: color .3s; }
       /* the banner heats up the deeper the run goes (round 1 = plain) */
       .round-badge { transform-origin: 50% 42%; }
@@ -137,7 +144,10 @@
       /* over-the-shoulder diagonal composition: player large in the foreground-left,
          enemy smaller and higher (midground) on the right.
          Anchored a fixed distance above the controls so feet never collide with the slots. */
-      .fighters { position: absolute; left: 0; right: 0; bottom: 365px; height: 44%; max-height: 460px; min-height: 260px; z-index: 2; }
+      .fighters { position: absolute; left: 0; right: 0;
+        top: calc(var(--hud-h) + clamp(50px, 18cqw, 88px));   /* clears the multiplier */
+        bottom: min(clamp(238px, 76cqw, 365px), 46%);          /* controls reserve, capped on short screens */
+        height: auto; z-index: 2; }
       .fighter { position: absolute; bottom: 0; height: 100%; width: 44%; }
       .fighter.player { left: 0; width: 48%; height: 100%; z-index: 2; }
       .fighter.enemy { right: 6%; width: 33%; height: 74%; bottom: 26%; z-index: 1; }
@@ -307,8 +317,8 @@
         padding: 10px max(14px, env(safe-area-inset-right)) max(16px, calc(12px + env(safe-area-inset-bottom))) max(14px, env(safe-area-inset-left));
         background: linear-gradient(180deg, transparent, rgba(8,9,16,.85) 40%); }
       /* bet COINS - coin-10/20/50.png assets ($ values baked in) */
-      .bets { display: flex; gap: 18px; justify-content: center; align-items: center; }
-      .chip { width: 62px; height: 62px; border: 0; padding: 0; cursor: pointer; border-radius: 50%;
+      .bets { display: flex; gap: clamp(10px, 3.8cqw, 18px); justify-content: center; align-items: center; }
+      .chip { width: clamp(46px, 13cqw, 62px); height: clamp(46px, 13cqw, 62px); border: 0; padding: 0; cursor: pointer; border-radius: 50%;
         color: transparent; font-size: 0; background: transparent center / contain no-repeat;
         filter: saturate(.72) brightness(.78); transition: transform .12s, filter .2s; }
       .chip[data-bet="10"] { background-image: url(./assets/coin-10.png); }
